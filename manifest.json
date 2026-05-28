@@ -1,0 +1,15 @@
+{
+    "name": "Kali Agent",
+    "description": "An Ai agent that can perform various tasks and actions based on user input.",
+    "version": "1.0.0",
+    "manifest_version": 3,
+    "author": "Kali Team",
+    "action": {
+        "default_popup": "index.html",
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    }
+}
