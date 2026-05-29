@@ -34,7 +34,38 @@
 
             <div class="chat-area">
                 <div class="empty-state">
-                    <i class="ti ti-message-circle empty-icon" aria-hidden="true"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="120" height="120">
+                      <defs>
+                        <filter id="sider-glow" x="-50%" y="-50%" width="200%" height="200%">
+                          <feGaussianBlur in="SourceGraphic" stdDeviation="12" />
+                        </filter>
+
+                        <radialGradient id="sider-base" cx="30%" cy="30%" r="70%" fx="30%" fy="30%">
+                          <stop offset="0%" stop-color="#f0abfc" />
+                          <stop offset="35%" stop-color="#c084fc" />
+                          <stop offset="75%" stop-color="#7e22ce" />
+                          <stop offset="100%" stop-color="#4c1d95" />
+                        </radialGradient>
+
+                        <radialGradient id="sider-specular" cx="32%" cy="22%" r="40%" fx="32%" fy="22%">
+                          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+                          <stop offset="20%" stop-color="#ffffff" stop-opacity="0.3" />
+                          <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+                        </radialGradient>
+
+                        <radialGradient id="sider-bounce" cx="70%" cy="80%" r="50%" fx="70%" fy="80%">
+                          <stop offset="0%" stop-color="#e879f9" stop-opacity="0.6" />
+                          <stop offset="100%" stop-color="#e879f9" stop-opacity="0" />
+                        </radialGradient>
+                      </defs>
+
+                      <circle cx="64" cy="68" r="32" fill="#a855f7" filter="url(#sider-glow)" opacity="0.6" />
+
+                      <circle cx="64" cy="64" r="36" fill="url(#sider-base)" />
+
+                      <circle cx="64" cy="64" r="36" fill="url(#sider-bounce)" />
+                      <circle cx="64" cy="64" r="36" fill="url(#sider-specular)" />
+                    </svg>
                     <span>Start a new conversation</span>
                 </div>
             </div>
