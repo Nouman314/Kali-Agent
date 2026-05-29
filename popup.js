@@ -1,8 +1,7 @@
-chrome.action.onClicked.addListener((tab) => {
-    chrome.sidePanel.open({ windowId: tab.windowId });
-});
-
 const inputBox = document.querySelector('.input-box');
+let isResizing = false;
+let startY = 0;
+let startHeight = 0;
 
 inputBox.addEventListener('input', function () {
     this.style.height = 'auto';
@@ -16,9 +15,32 @@ inputBox.addEventListener('keydown', function (e) {
     }
 });
 
+inputBox.addEventListener('mousemove', function (e) {
+    if (isResizing) return;
+    const rect = this.getBoundingClientRect();
+    const isTopEdge = e.clientY - rect.top < 8;
+    this.style.cursor = isTopEdge ? 'ns-resize' : 'text';
+});
+
+inputBox.addEventListener('mousedown', function (e) {
+    const rect = this.getBoundingClientRect();
+    const isTopEdge = e.clientY - rect.top < 8;
+
+    if (isTopEdge) {
+        isResizing = true;
+        startY = e.clientY;
+        startHeight = rect.height;
+        e.preventDefault();
+    }
+});
+
+document.addEventListener('mouseup', function () {
+    isResizing = false;
+});
+
 function sendMessage() {
     const text = inputBox.value.trim();
     if (!text) return;
     inputBox.value = '';
-    inputBox.style.height = 'auto';
+    inputBox.style.height = '100px';
 }
