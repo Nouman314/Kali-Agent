@@ -34,6 +34,20 @@ inputBox.addEventListener('mousedown', function (e) {
     }
 });
 
+document.addEventListener('mousemove', function (e) {
+    if (!isResizing) return;
+
+    const delta = startY - e.clientY;
+    let newHeight = startHeight + delta;
+    const minHeight = 100;
+    const maxHeight = 400;
+
+    if (newHeight < minHeight) newHeight = minHeight;
+    if (newHeight > maxHeight) newHeight = maxHeight;
+
+    inputBox.style.height = newHeight + 'px';
+});
+
 document.addEventListener('mouseup', function () {
     isResizing = false;
 });
