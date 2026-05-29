@@ -108,7 +108,9 @@
 
   .input-box {
     width: 100%;
+    overflow: hidden;
     min-height: 44px;
+    max-height: 200px;
     border: 0.5px solid rgba(0, 0, 0, 0.1);
     border-radius: 12px;
     padding: 10px 14px;
