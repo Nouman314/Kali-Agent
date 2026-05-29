@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+    <h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Chrome
+        extension sidebar with chat panel and navigation</h2>
+
+    <div class="sidebar-shell">
+        <div class="main-panel">
+            <div class="header">
+                <div class="header-left">
+                    <span class="header-title">New Chat</span>
+                    <i class="ti ti-chevron-down header-chevron" aria-hidden="true"></i>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" aria-label="New chat"><i class="ti ti-edit"
+                            aria-hidden="true"></i></button>
+                    <button class="icon-btn" aria-label="Export"><i class="ti ti-external-link"
+                            aria-hidden="true"></i></button>
+                    <button class="icon-btn" aria-label="Close"><i class="ti ti-x" aria-hidden="true"></i></button>
+                </div>
+            </div>
+
+            <div class="chat-area">
+                <div class="empty-state">
+                    <i class="ti ti-message-circle empty-icon" aria-hidden="true"></i>
+                    <span>Start a new conversation</span>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <textarea class="input-box" placeholder="Ask anything..." rows="1"></textarea>
+                <div class="input-footer">
+                    <button class="model-selector">
+                        <div class="model-dot"></div>
+                        <span>Opus 4.5</span>
+                        <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:13px;"></i>
+                    </button>
+                    <div class="input-right">
+                        <button class="plus-btn" aria-label="Attach"><i class="ti ti-plus"
+                                aria-hidden="true"></i></button>
+                        <button class="send-btn" aria-label="Send"><i class="ti ti-arrow-up"
+                                aria-hidden="true"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-nav">
+            <div class="nav-item active" role="button" tabindex="0">
+                <i class="ti ti-message-circle" aria-hidden="true"></i>
+                <span class="nav-label">Chat</span>
+            </div>
+            <div class="nav-item" role="button" tabindex="0">
+                <i class="ti ti-compass" aria-hidden="true"></i>
+                <span class="nav-label">Discover</span>
+            </div>
+            <div class="nav-item" role="button" tabindex="0">
+                <i class="ti ti-robot" aria-hidden="true"></i>
+                <span class="nav-label">Agents</span>
+            </div>
+            <div class="nav-item" role="button" tabindex="0">
+                <i class="ti ti-brain" aria-hidden="true"></i>
+                <span class="nav-label">Knowledge</span>
+            </div>
+            <div class="nav-item" role="button" tabindex="0">
+                <i class="ti ti-template" aria-hidden="true"></i>
+                <span class="nav-label">Templates</span>
+            </div>
+            <div class="nav-item" role="button" tabindex="0">
+                <i class="ti ti-activity" aria-hidden="true"></i>
+                <span class="nav-label">Activity</span>
+            </div>
+            <div class="nav-item" role="button" tabindex="0">
+                <i class="ti ti-settings" aria-hidden="true"></i>
+                <span class="nav-label">Settings</span>
+            </div>
+
+            <div class="nav-spacer"></div>
+            <div class="nav-divider"></div>
+
+            <div class="nav-item" role="button" tabindex="0">
+                <i class="ti ti-help-circle" aria-hidden="true"></i>
+                <span class="nav-label">Help</span>
+            </div>
+
+            <div class="avatar" role="button" tabindex="0" aria-label="User profile">
+                N
+                <div class="avatar-dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
