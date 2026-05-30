@@ -3,17 +3,26 @@
     const style = document.createElement('style');
     style.textContent = `
         @keyframes textShimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
+            0%   { background-position: 100% center; }
+            100% { background-position: -100% center; }
         }
         .shimmer-text {
-            display: inline-block;
-            background: linear-gradient(90deg, #71717a 20%, #09090b 50%, #71717a 80%);
-            background-size: 200% auto;
+            display: inline;
+            background: linear-gradient(
+                90deg,
+                #52525b 0%,
+                #52525b 20%,
+                #f4f4f5 45%,
+                #09090b 50%,
+                #f4f4f5 55%,
+                #52525b 80%,
+                #52525b 100%
+            );
+            background-size: 400% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            animation: textShimmer 2s linear infinite;
+            animation: textShimmer 1.8s ease-in-out infinite;
         }
         @keyframes bubbleFadeIn {
             from { opacity: 0; transform: translateY(6px); }
@@ -23,11 +32,12 @@
             animation: bubbleFadeIn 0.25s ease-out forwards;
         }
         @keyframes phraseSlideUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            0%   { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
-        .phrase-animate {
-            animation: phraseSlideUp 0.3s ease-out forwards;
+        .phrase-wrapper {
+            display: inline-block;
+            animation: phraseSlideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         .model-option:hover {
             background: #f3f4f6;
@@ -188,31 +198,36 @@ async function sendMessage() {
     // Show user bubble
     appendBubble(text, 'user');
 
-    // Show a thinking indicator with cycling phrases
+    // Show a thinking indicator with cycling shimmer phrases
     const thinkingBubble = appendBubble('', 'ai');
-    const shimmerSpan = document.createElement('span');
-    shimmerSpan.className = 'shimmer-text phrase-animate';
-    thinkingBubble.appendChild(shimmerSpan);
 
     const phrases = [
-        "Agent is thinking...",
-        "Processing your request...",
-        "Analyzing the data...",
-        "Generating response...",
+        "Thinking...",
+        "Processing...",
+        "Analyzing...",
+        "Generating...",
         "Almost there..."
     ];
     let phraseIndex = 0;
-    shimmerSpan.textContent = phrases[0];
 
+    function renderPhrase() {
+        thinkingBubble.innerHTML = '';
+        // Outer span: handles the slide-up transform
+        const wrapper = document.createElement('span');
+        wrapper.className = 'phrase-wrapper';
+        // Inner span: handles the shimmer background-clip
+        const shimmer = document.createElement('span');
+        shimmer.className = 'shimmer-text';
+        shimmer.textContent = phrases[phraseIndex];
+        wrapper.appendChild(shimmer);
+        thinkingBubble.appendChild(wrapper);
+    }
+
+    renderPhrase();
     const thinkingInterval = setInterval(() => {
         phraseIndex = (phraseIndex + 1) % phrases.length;
-        shimmerSpan.textContent = phrases[phraseIndex];
-        
-        // Restart animation
-        shimmerSpan.classList.remove('phrase-animate');
-        void shimmerSpan.offsetWidth; // Trigger reflow
-        shimmerSpan.classList.add('phrase-animate');
-    }, 3000);
+        renderPhrase();
+    }, 2000);
 
     try {
         const response = await fetch(BACKEND_URL, {
