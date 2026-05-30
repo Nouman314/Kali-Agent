@@ -35,37 +35,46 @@
             <div class="chat-area">
                 <div class="empty-state">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="120" height="120">
-                      <defs>
-                        <filter id="sider-glow" x="-50%" y="-50%" width="200%" height="200%">
-                          <feGaussianBlur in="SourceGraphic" stdDeviation="12" />
-                        </filter>
+                        <defs>
+                            <filter id="sider-glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="12"></feGaussianBlur>
+                            </filter>
 
-                        <radialGradient id="sider-base" cx="30%" cy="30%" r="70%" fx="30%" fy="30%">
-                          <stop offset="0%" stop-color="#f0abfc" />
-                          <stop offset="35%" stop-color="#c084fc" />
-                          <stop offset="75%" stop-color="#7e22ce" />
-                          <stop offset="100%" stop-color="#4c1d95" />
-                        </radialGradient>
+                            <radialGradient id="sider-base" cx="20%" cy="20%" r="90%" fx="20%" fy="20%">
+                            <stop offset="0%" stop-color="#c4cbff"></stop>
+                            <stop offset="35%" stop-color="#83a1ff"></stop>
+                            <stop offset="70%" stop-color="#4b3fd8"></stop>
+                            <stop offset="100%" stop-color="#1a1670"></stop>
+                            </radialGradient>
 
-                        <radialGradient id="sider-specular" cx="32%" cy="22%" r="40%" fx="32%" fy="22%">
-                          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
-                          <stop offset="20%" stop-color="#ffffff" stop-opacity="0.3" />
-                          <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
-                        </radialGradient>
+                            <radialGradient id="sider-specular" cx="32%" cy="22%" r="40%" fx="32%" fy="22%">
+                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"></stop>
+                            <stop offset="20%" stop-color="#ffffff" stop-opacity="0.3"></stop>
+                            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"></stop>
+                            </radialGradient>
 
-                        <radialGradient id="sider-bounce" cx="70%" cy="80%" r="50%" fx="70%" fy="80%">
-                          <stop offset="0%" stop-color="#e879f9" stop-opacity="0.6" />
-                          <stop offset="100%" stop-color="#e879f9" stop-opacity="0" />
-                        </radialGradient>
-                      </defs>
+                            <radialGradient id="sider-bounce" cx="80%" cy="70%" r="60%" fx="80%" fy="70%">
+                            <stop offset="0%" stop-color="#a2d8ff" stop-opacity="0.8"></stop>
+                            <stop offset="50%" stop-color="#6073ea" stop-opacity="0.4"></stop>
+                            <stop offset="100%" stop-color="#4b3fd8" stop-opacity="0"></stop>
+                            </radialGradient>
+                        </defs>
 
-                      <circle cx="64" cy="68" r="32" fill="#a855f7" filter="url(#sider-glow)" opacity="0.6" />
+                        <circle cx="64" cy="68" r="32" fill="#6073ea" filter="url(#sider-glow)" opacity="0.6">
+                            <animate attributeName="opacity" values="0.4; 0.8; 0.4" dur="4s" repeatCount="indefinite" />
+                        </circle>
 
-                      <circle cx="64" cy="64" r="36" fill="url(#sider-base)" />
+                        <circle cx="64" cy="64" r="36" fill="url(#sider-base)">
+                            <animateTransform attributeName="transform" type="rotate" from="0 64 64" to="360 64 64" dur="10s" repeatCount="indefinite" />
+                        </circle>
 
-                      <circle cx="64" cy="64" r="36" fill="url(#sider-bounce)" />
-                      <circle cx="64" cy="64" r="36" fill="url(#sider-specular)" />
+                        <circle cx="64" cy="64" r="36" fill="url(#sider-bounce)">
+                            <animateTransform attributeName="transform" type="rotate" from="360 64 64" to="0 64 64" dur="14s" repeatCount="indefinite" />
+                        </circle>
+
+                        <circle cx="64" cy="64" r="36" fill="url(#sider-specular)"></circle>
                     </svg>
+
                     <span>Start a new conversation</span>
                 </div>
             </div>
