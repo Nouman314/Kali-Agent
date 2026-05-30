@@ -136,7 +136,7 @@ body {
 }
 
 .input-box-wrapper:hover {
-    border-color: rgba(0, 0, 0, 0.2);
+    border-top: 3px solid rgba(0, 0, 0, 0.15);
 }
 
 .input-box-wrapper:focus-within {

@@ -16,15 +16,17 @@ inputBox.addEventListener('keydown', function (e) {
     }
 });
 
-inputWrapper.addEventListener('mousemove', function (e) {
+function updateResizeCursor(e) {
     if (isResizing) return;
-    const rect = this.getBoundingClientRect();
+    const rect = inputWrapper.getBoundingClientRect();
     const isTopEdge = e.clientY - rect.top < 8;
-    this.style.cursor = isTopEdge ? 'ns-resize' : 'text';
-});
+    const cursor = isTopEdge ? 'ns-resize' : 'text';
+    inputWrapper.style.cursor = cursor;
+    inputBox.style.cursor = cursor;
+}
 
-inputWrapper.addEventListener('mousedown', function (e) {
-    const rect = this.getBoundingClientRect();
+function tryStartResize(e) {
+    const rect = inputWrapper.getBoundingClientRect();
     const isTopEdge = e.clientY - rect.top < 8;
 
     if (isTopEdge) {
@@ -33,7 +35,13 @@ inputWrapper.addEventListener('mousedown', function (e) {
         startHeight = inputBox.getBoundingClientRect().height;
         e.preventDefault();
     }
-});
+}
+
+inputWrapper.addEventListener('mousemove', updateResizeCursor);
+inputBox.addEventListener('mousemove', updateResizeCursor);
+
+inputWrapper.addEventListener('mousedown', tryStartResize);
+inputBox.addEventListener('mousedown', tryStartResize);
 
 document.addEventListener('mousemove', function (e) {
     if (!isResizing) return;
