@@ -88,6 +88,29 @@ body {
     gap: 12px;
 }
 
+.bubble-actions {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+    /* align to match the bubble above */
+}
+
+.bubble-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 14px;
+    padding: 3px 5px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.bubble-actions button:hover {
+    color: #111111;
+    background: #f3f4f6;
+}
+
 .empty-state {
     flex: 1;
     display: flex;

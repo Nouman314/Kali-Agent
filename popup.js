@@ -58,6 +58,7 @@ const modelDropdown     = document.getElementById('modelDropdown');
 const selectedModelText = document.getElementById('selectedModelText');
 const modelOptions      = document.querySelectorAll('.model-option');
 
+
 // ── Resize State ─────────────────────────────────────────────────
 let isResizing  = false;
 let startY      = 0;
@@ -94,7 +95,19 @@ function appendBubble(text, role) {
         overflowY:     'auto',
     });
 
+    const actions = document.createElement('div');
+    actions.className  = 'bubble-actions';
+    actions.style.alignSelf = role === 'user' ? 'flex-end' : 'flex-start';
+    actions.innerHTML = role === 'user'
+        ? `<button title="Edit"><i class="ti ti-edit"></i></button>
+        <button title="Copy"><i class="ti ti-copy"></i></button>`
+        : `<button title="Copy"><i class="ti ti-copy"></i></button>
+        <button title="Like"><i class="ti ti-thumb-up"></i></button>
+        <button title="Dislike"><i class="ti ti-thumb-down"></i></button>
+        <button title="Retry"><i class="ti ti-refresh"></i></button>`;
+
     chatArea.appendChild(bubble);
+    chatArea.appendChild(actions);
     chatArea.scrollTop = chatArea.scrollHeight;
     return bubble;
 }
