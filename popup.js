@@ -1,4 +1,5 @@
 const inputBox = document.querySelector('.input-box');
+const inputWrapper = document.querySelector('.input-box-wrapper');
 let isResizing = false;
 let startY = 0;
 let startHeight = 0;
@@ -15,21 +16,21 @@ inputBox.addEventListener('keydown', function (e) {
     }
 });
 
-inputBox.addEventListener('mousemove', function (e) {
+inputWrapper.addEventListener('mousemove', function (e) {
     if (isResizing) return;
     const rect = this.getBoundingClientRect();
     const isTopEdge = e.clientY - rect.top < 8;
     this.style.cursor = isTopEdge ? 'ns-resize' : 'text';
 });
 
-inputBox.addEventListener('mousedown', function (e) {
+inputWrapper.addEventListener('mousedown', function (e) {
     const rect = this.getBoundingClientRect();
     const isTopEdge = e.clientY - rect.top < 8;
 
     if (isTopEdge) {
         isResizing = true;
         startY = e.clientY;
-        startHeight = rect.height;
+        startHeight = inputBox.getBoundingClientRect().height;
         e.preventDefault();
     }
 });
