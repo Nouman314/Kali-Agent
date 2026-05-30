@@ -81,8 +81,9 @@ def chat():
             parts=[genai.types.Part(text=user_message)]
         ))
 
+        selected_model = data.get("model", MODEL_NAME)
         response = client.models.generate_content(
-            model=MODEL_NAME,
+            model=selected_model,
             contents=contents,
             config=genai.types.GenerateContentConfig(
                 system_instruction=SYSTEM_INSTRUCTION,

@@ -29,6 +29,9 @@
         .phrase-animate {
             animation: phraseSlideUp 0.3s ease-out forwards;
         }
+        .model-option:hover {
+            background: #f3f4f6;
+        }
     `;
     document.head.appendChild(style);
 })();
@@ -215,7 +218,7 @@ async function sendMessage() {
         const response = await fetch(BACKEND_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text }),
+            body: JSON.stringify({ message: text, model: currentModel }),
         });
 
         const data = await response.json();
@@ -241,3 +244,41 @@ async function sendMessage() {
 
 // Wire the send button click to sendMessage
 document.querySelector('.send-btn').addEventListener('click', sendMessage);
+
+// ── Model Selector Dropdown Logic ──────────────────────────────
+let currentModel = 'gemini-2.5-flash';
+
+const modelSelectBtn = document.getElementById('modelSelectBtn');
+const modelDropdown = document.getElementById('modelDropdown');
+const selectedModelText = document.getElementById('selectedModelText');
+const modelOptions = document.querySelectorAll('.model-option');
+
+// Toggle dropdown
+modelSelectBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = modelDropdown.style.display === 'block';
+    modelDropdown.style.display = isVisible ? 'none' : 'block';
+});
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (!modelDropdown.contains(e.target)) {
+        modelDropdown.style.display = 'none';
+    }
+});
+
+// Handle option selection
+modelOptions.forEach(option => {
+    option.addEventListener('click', () => {
+        currentModel = option.getAttribute('data-model');
+        selectedModelText.textContent = option.textContent.trim();
+        modelDropdown.style.display = 'none';
+        
+        // Update the main button's dot color to match the selected option
+        const mainDot = modelSelectBtn.querySelector('.model-dot');
+        const optionDot = option.querySelector('.model-dot');
+        if (mainDot && optionDot) {
+            mainDot.style.background = optionDot.style.background;
+        }
+    });
+});
