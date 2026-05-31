@@ -57,6 +57,7 @@ const modelSelectBtn    = document.getElementById('modelSelectBtn');
 const modelDropdown     = document.getElementById('modelDropdown');
 const selectedModelText = document.getElementById('selectedModelText');
 const modelOptions      = document.querySelectorAll('.model-option');
+const sidebarShell      = document.querySelector('.sidebar-shell');
 
 // ── Resize State ─────────────────────────────────────────────────
 let isResizing  = false;
@@ -359,8 +360,11 @@ try {
 } catch(e) {}
 
 try {
-    document.querySelector('.header-actions .icon-btn[aria-label="Close"]').addEventListener('click', () => {
-        window.close();
+    const sidebarToggleBtn = document.querySelector('.header-actions .icon-btn[aria-label="Toggle sidebar"]');
+    sidebarToggleBtn.addEventListener('click', () => {
+        const isCollapsed = sidebarShell.classList.toggle('sidebar-collapsed');
+        sidebarToggleBtn.setAttribute('aria-pressed', String(isCollapsed));
+        sidebarToggleBtn.setAttribute('data-tooltip', isCollapsed ? 'Show sidebar' : 'Hide sidebar');
     });
 } catch(e) {}
 

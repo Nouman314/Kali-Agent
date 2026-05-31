@@ -23,6 +23,12 @@ body {
     display: flex;
     flex-direction: column;
     border-right: 0.5px solid rgba(0, 0, 0, 0.1);
+    transition: width 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar-shell.sidebar-collapsed .main-panel {
+    width: 100%;
+    border-right-color: transparent;
 }
 
 .header {
@@ -39,7 +45,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    cursor: pointer;
+    cursor: default;
     user-select: none;
 }
 
@@ -49,11 +55,6 @@ body {
     color: #111111;
 }
 
-.header-chevron {
-    font-size: 14px;
-    color: #6b7280;
-}
-
 .header-actions {
     display: flex;
     align-items: center;
@@ -61,6 +62,7 @@ body {
 }
 
 .icon-btn {
+    position: relative;
     width: 32px;
     height: 32px;
     display: flex;
@@ -78,6 +80,36 @@ body {
 .icon-btn:hover {
     background: #f3f4f6;
     color: #111111;
+}
+
+.icon-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111111;
+    color: #ffffff;
+    font-size: 11px;
+    font-family: 'Inter', sans-serif;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 10;
+}
+
+.icon-btn[data-tooltip-side="bottom-left"]::after {
+    top: calc(100% + 8px);
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.icon-btn:hover::after {
+    opacity: 1;
 }
 
 .chat-area {
@@ -344,6 +376,15 @@ body {
     padding: 12px 0;
     gap: 2px;
     background: #ffffff;
+    transition: width 0.2s ease, padding 0.2s ease, opacity 0.2s ease;
+}
+
+.sidebar-shell.sidebar-collapsed .right-nav {
+    width: 0;
+    padding: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
 }
 
 .nav-item {
