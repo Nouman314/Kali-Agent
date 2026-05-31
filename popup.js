@@ -52,7 +52,8 @@ const THINKING_PHRASES = [
 const inputBox          = document.querySelector('.input-box');
 const inputWrapper      = document.querySelector('.input-box-wrapper');
 const chatArea          = document.querySelector('.chat-area');
-const emptyState        = document.querySelector('.empty-state');
+const emptyStateTemplate = document.getElementById('emptyStateTemplate');
+const EMPTY_STATE_HTML   = emptyStateTemplate ? emptyStateTemplate.innerHTML.trim() : '';
 const modelSelectBtn    = document.getElementById('modelSelectBtn');
 const modelDropdown     = document.getElementById('modelDropdown');
 const selectedModelText = document.getElementById('selectedModelText');
@@ -67,8 +68,18 @@ let startHeight = 0;
 // ── Helpers ──────────────────────────────────────────────────────
 
 // showActions = false is used for the thinking bubble so icons don't appear before a real reply
+function renderEmptyState() {
+    if (!chatArea || !EMPTY_STATE_HTML) return;
+    chatArea.innerHTML = EMPTY_STATE_HTML;
+}
+
+function hideEmptyState() {
+    const currentEmptyState = chatArea.querySelector('.empty-state');
+    if (currentEmptyState) currentEmptyState.style.display = 'none';
+}
+
 function appendBubble(text, role, showActions = true) {
-    if (emptyState) emptyState.style.display = 'none';
+    hideEmptyState();
 
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble chat-bubble--${role}`;
@@ -336,10 +347,7 @@ inputBox.addEventListener('keydown', function (e) {
 
 try {
     document.querySelector('.header-actions .icon-btn[aria-label="New chat"]').addEventListener('click', () => {
-        const emptyStateClone = emptyState.cloneNode(true);
-        chatArea.innerHTML = '';
-        chatArea.appendChild(emptyStateClone);
-        emptyStateClone.style.display = 'flex';
+        renderEmptyState();
     });
 } catch(e) {}
 
@@ -396,3 +404,5 @@ document.addEventListener('click', (e) => {
 });
 
 modelOptions.forEach(option => option.addEventListener('click', () => handleModelSelect(option)));
+
+renderEmptyState();
