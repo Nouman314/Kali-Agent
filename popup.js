@@ -111,8 +111,15 @@ function appendBubble(text, role, showActions = true) {
                <button title="Retry"><i class="ti ti-refresh"></i></button>`;
 
         // Copy works for both roles
-        actions.querySelector('[title="Copy"]').addEventListener('click', () => {
+        actions.querySelector('[title="Copy"]').addEventListener('click', (e) => {
             navigator.clipboard.writeText(bubble.textContent);
+            const btn = e.currentTarget;
+            btn.querySelector('i').className = 'ti ti-check';
+            btn.style.color = '#22c55e';
+            setTimeout(() => {
+                btn.querySelector('i').className = 'ti ti-copy';
+                btn.style.color = '';
+            }, 1500);
         });
 
         if (role === 'user') {
@@ -123,9 +130,24 @@ function appendBubble(text, role, showActions = true) {
         }
 
         if (role === 'ai') {
-            actions.querySelector('[title="Retry"]').addEventListener('click', () => {
-                // Find the last user bubble text and re-send it
-                const userBubbles = chatArea.querySelectorAll('.chat-bubble--user');
+
+            actions.querySelector('[title="Like"]').addEventListener('click', (e) => {
+                const btn = e.currentTarget;
+                const isActive = btn.style.color === 'rgb(75, 63, 216)';
+                btn.style.color = isActive ? '' : '#4b3fd8';
+            });
+
+            actions.querySelector('[title="Dislike"]').addEventListener('click', (e) => {
+                const btn = e.currentTarget;
+                const isActive = btn.style.color === 'rgb(239, 68, 68)';
+                btn.style.color = isActive ? '' : '#ef4444';
+            });
+
+            actions.querySelector('[title="Retry"]').addEventListener('click', (e) => {
+                const icon = e.currentTarget.querySelector('i');
+                icon.classList.add('spin-once');
+                icon.addEventListener('animationend', () => icon.classList.remove('spin-once'), { once: true });
+                const userBubbles  = chatArea.querySelectorAll('.chat-bubble--user');
                 const lastUserText = userBubbles[userBubbles.length - 1]?.textContent;
                 if (lastUserText) {
                     inputBox.value = lastUserText;
@@ -235,11 +257,33 @@ async function sendMessage() {
                 <button title="Dislike"><i class="ti ti-thumb-down"></i></button>
                 <button title="Retry"><i class="ti ti-refresh"></i></button>`;
 
-            actions.querySelector('[title="Copy"]').addEventListener('click', () => {
+            actions.querySelector('[title="Copy"]').addEventListener('click', (e) => {
                 navigator.clipboard.writeText(thinkingBubble.textContent);
+                const btn = e.currentTarget;
+                btn.querySelector('i').className = 'ti ti-check';
+                btn.style.color = '#22c55e';
+                setTimeout(() => {
+                    btn.querySelector('i').className = 'ti ti-copy';
+                    btn.style.color = '';
+                }, 1500);
             });
 
-            actions.querySelector('[title="Retry"]').addEventListener('click', () => {
+            actions.querySelector('[title="Like"]').addEventListener('click', (e) => {
+                const btn = e.currentTarget;
+                const isActive = btn.style.color === 'rgb(75, 63, 216)';
+                btn.style.color = isActive ? '' : '#4b3fd8';
+            });
+
+            actions.querySelector('[title="Dislike"]').addEventListener('click', (e) => {
+                const btn = e.currentTarget;
+                const isActive = btn.style.color === 'rgb(239, 68, 68)';
+                btn.style.color = isActive ? '' : '#ef4444';
+            });
+
+            actions.querySelector('[title="Retry"]').addEventListener('click', (e) => {
+                const icon = e.currentTarget.querySelector('i');
+                icon.classList.add('spin-once');
+                icon.addEventListener('animationend', () => icon.classList.remove('spin-once'), { once: true });
                 const userBubbles   = chatArea.querySelectorAll('.chat-bubble--user');
                 const lastUserText  = userBubbles[userBubbles.length - 1]?.textContent;
                 if (lastUserText) {
