@@ -92,7 +92,7 @@ body {
     display: flex;
     gap: 4px;
     margin-bottom: 10px;
-    /* align to match the bubble above */
+    margin-top: -8px;
 }
 
 .bubble-actions button {
@@ -100,7 +100,7 @@ body {
     border: none;
     cursor: pointer;
     color: #9ca3af;
-    font-size: 14px;
+    font-size: 18px;
     padding: 3px 5px;
     border-radius: 6px;
     transition: color 0.15s, background 0.15s;

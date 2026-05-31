@@ -58,7 +58,6 @@ const modelDropdown     = document.getElementById('modelDropdown');
 const selectedModelText = document.getElementById('selectedModelText');
 const modelOptions      = document.querySelectorAll('.model-option');
 
-
 // ── Resize State ─────────────────────────────────────────────────
 let isResizing  = false;
 let startY      = 0;
@@ -66,7 +65,8 @@ let startHeight = 0;
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-function appendBubble(text, role) {
+// showActions = false is used for the thinking bubble so icons don't appear before a real reply
+function appendBubble(text, role, showActions = true) {
     if (emptyState) emptyState.style.display = 'none';
 
     const bubble = document.createElement('div');
@@ -95,19 +95,48 @@ function appendBubble(text, role) {
         overflowY:     'auto',
     });
 
-    const actions = document.createElement('div');
-    actions.className  = 'bubble-actions';
-    actions.style.alignSelf = role === 'user' ? 'flex-end' : 'flex-start';
-    actions.innerHTML = role === 'user'
-        ? `<button title="Edit"><i class="ti ti-edit"></i></button>
-        <button title="Copy"><i class="ti ti-copy"></i></button>`
-        : `<button title="Copy"><i class="ti ti-copy"></i></button>
-        <button title="Like"><i class="ti ti-thumb-up"></i></button>
-        <button title="Dislike"><i class="ti ti-thumb-down"></i></button>
-        <button title="Retry"><i class="ti ti-refresh"></i></button>`;
-
     chatArea.appendChild(bubble);
-    chatArea.appendChild(actions);
+
+    if (showActions) {
+        const actions = document.createElement('div');
+        actions.className       = 'bubble-actions';
+        actions.style.alignSelf = role === 'user' ? 'flex-end' : 'flex-start';
+
+        actions.innerHTML = role === 'user'
+            ? `<button title="Edit"><i class="ti ti-edit"></i></button>
+               <button title="Copy"><i class="ti ti-copy"></i></button>`
+            : `<button title="Copy"><i class="ti ti-copy"></i></button>
+               <button title="Like"><i class="ti ti-thumb-up"></i></button>
+               <button title="Dislike"><i class="ti ti-thumb-down"></i></button>
+               <button title="Retry"><i class="ti ti-refresh"></i></button>`;
+
+        // Copy works for both roles
+        actions.querySelector('[title="Copy"]').addEventListener('click', () => {
+            navigator.clipboard.writeText(bubble.textContent);
+        });
+
+        if (role === 'user') {
+            actions.querySelector('[title="Edit"]').addEventListener('click', () => {
+                inputBox.value = bubble.textContent;
+                inputBox.focus();
+            });
+        }
+
+        if (role === 'ai') {
+            actions.querySelector('[title="Retry"]').addEventListener('click', () => {
+                // Find the last user bubble text and re-send it
+                const userBubbles = chatArea.querySelectorAll('.chat-bubble--user');
+                const lastUserText = userBubbles[userBubbles.length - 1]?.textContent;
+                if (lastUserText) {
+                    inputBox.value = lastUserText;
+                    sendMessage();
+                }
+            });
+        }
+
+        chatArea.appendChild(actions);
+    }
+
     chatArea.scrollTop = chatArea.scrollHeight;
     return bubble;
 }
@@ -153,12 +182,13 @@ async function sendMessage() {
     const text = inputBox.value.trim();
     if (!text) return;
 
-    inputBox.value         = '';
-    inputBox.style.height  = '100px';
+    inputBox.value        = '';
+    inputBox.style.height = '100px';
 
     appendBubble(text, 'user');
 
-    const thinkingBubble = appendBubble('', 'ai');
+    // Pass false so the thinking bubble gets no action icons
+    const thinkingBubble = appendBubble('', 'ai', false);
     let phraseIndex = 0;
 
     // Cycles through shimmer phrases while waiting for the backend response
@@ -194,6 +224,32 @@ async function sendMessage() {
             thinkingBubble.textContent = `⚠️ ${data.error || 'Server error'}`;
         } else {
             await typeText(thinkingBubble, data.reply, 6);
+
+            // Add action icons after the reply has finished typing
+            const actions = document.createElement('div');
+            actions.className       = 'bubble-actions';
+            actions.style.alignSelf = 'flex-start';
+            actions.innerHTML = `
+                <button title="Copy"><i class="ti ti-copy"></i></button>
+                <button title="Like"><i class="ti ti-thumb-up"></i></button>
+                <button title="Dislike"><i class="ti ti-thumb-down"></i></button>
+                <button title="Retry"><i class="ti ti-refresh"></i></button>`;
+
+            actions.querySelector('[title="Copy"]').addEventListener('click', () => {
+                navigator.clipboard.writeText(thinkingBubble.textContent);
+            });
+
+            actions.querySelector('[title="Retry"]').addEventListener('click', () => {
+                const userBubbles   = chatArea.querySelectorAll('.chat-bubble--user');
+                const lastUserText  = userBubbles[userBubbles.length - 1]?.textContent;
+                if (lastUserText) {
+                    inputBox.value = lastUserText;
+                    sendMessage();
+                }
+            });
+
+            chatArea.appendChild(actions);
+            chatArea.scrollTop = chatArea.scrollHeight;
         }
     } catch (err) {
         clearInterval(thinkingInterval);
