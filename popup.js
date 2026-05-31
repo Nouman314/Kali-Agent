@@ -333,6 +333,37 @@ inputBox.addEventListener('keydown', function (e) {
     }
 });
 
+try {
+    document.querySelector('.header-actions .icon-btn[aria-label="New chat"]').addEventListener('click', () => {
+        const emptyStateClone = emptyState.cloneNode(true);
+        chatArea.innerHTML = '';
+        chatArea.appendChild(emptyStateClone);
+        emptyStateClone.style.display = 'flex';
+    });
+} catch(e) {}
+
+try {
+    document.querySelector('.header-actions .icon-btn[aria-label="Export"]').addEventListener('click', () => {
+        const messages = [];
+        document.querySelectorAll('.chat-bubble').forEach(bubble => {
+            messages.push(bubble.dataset.rawText || bubble.textContent);
+        });
+        const blob = new Blob([messages.join('\n\n')], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'chat-export.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+} catch(e) {}
+
+try {
+    document.querySelector('.header-actions .icon-btn[aria-label="Close"]').addEventListener('click', () => {
+        window.close();
+    });
+} catch(e) {}
+
 inputWrapper.addEventListener('mousemove', updateResizeCursor);
 inputBox.addEventListener('mousemove',     updateResizeCursor);
 
@@ -355,7 +386,9 @@ modelSelectBtn.addEventListener('click', (e) => {
 });
 
 document.addEventListener('click', (e) => {
-    if (!modelDropdown.contains(e.target)) modelDropdown.style.display = 'none';
+    if (!modelDropdown.contains(e.target) && !modelSelectBtn.contains(e.target)) {
+        modelDropdown.style.display = 'none';
+    }
 });
 
 modelOptions.forEach(option => option.addEventListener('click', () => handleModelSelect(option)));
