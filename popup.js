@@ -71,10 +71,11 @@ function appendBubble(text, role, showActions = true) {
 
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble chat-bubble--${role}`;
-    bubble.textContent = text;
+    bubble.dataset.rawText = role === 'ai' ? text : '';
+    bubble.innerHTML = role === 'ai' ? marked.parse(text) : text;
 
     Object.assign(bubble.style, {
-        maxWidth:     '80%',
+        maxWidth:     role === 'user' ? '80%' : '95%',
         padding:      '10px 14px',
         borderRadius: role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
         marginBottom: '10px',
@@ -112,7 +113,7 @@ function appendBubble(text, role, showActions = true) {
 
         // Copy works for both roles
         actions.querySelector('[title="Copy"]').addEventListener('click', (e) => {
-            navigator.clipboard.writeText(bubble.textContent);
+            navigator.clipboard.writeText(bubble.dataset.rawText || text);
             const btn = e.currentTarget;
             btn.querySelector('i').className = 'ti ti-check';
             btn.style.color = '#22c55e';
@@ -124,7 +125,7 @@ function appendBubble(text, role, showActions = true) {
 
         if (role === 'user') {
             actions.querySelector('[title="Edit"]').addEventListener('click', () => {
-                inputBox.value = bubble.textContent;
+                inputBox.value = text;
                 inputBox.focus();
             });
         }
@@ -164,15 +165,19 @@ function appendBubble(text, role, showActions = true) {
 }
 
 function typeText(element, text, speed = 6) {
-    element.textContent = '';
+    element.innerHTML = '';
     let i = 0;
     return new Promise((resolve) => {
         function type() {
             if (i < text.length) {
-                element.textContent += text.charAt(i++);
+                i++;
+                element.innerHTML = marked.parse(text.slice(0, i));
                 chatArea.scrollTop = chatArea.scrollHeight;
                 setTimeout(type, speed);
             } else {
+                element.innerHTML = marked.parse(text);
+                element.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+                chatArea.scrollTop = chatArea.scrollHeight;
                 resolve();
             }
         }
@@ -245,6 +250,7 @@ async function sendMessage() {
         if (!response.ok || data.error) {
             thinkingBubble.textContent = `⚠️ ${data.error || 'Server error'}`;
         } else {
+            thinkingBubble.dataset.rawText = data.reply;
             await typeText(thinkingBubble, data.reply, 6);
 
             // Add action icons after the reply has finished typing
@@ -258,7 +264,7 @@ async function sendMessage() {
                 <button title="Retry"><i class="ti ti-refresh"></i></button>`;
 
             actions.querySelector('[title="Copy"]').addEventListener('click', (e) => {
-                navigator.clipboard.writeText(thinkingBubble.textContent);
+                navigator.clipboard.writeText(thinkingBubble.dataset.rawText || thinkingBubble.textContent);
                 const btn = e.currentTarget;
                 btn.querySelector('i').className = 'ti ti-check';
                 btn.style.color = '#22c55e';
