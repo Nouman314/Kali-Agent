@@ -160,9 +160,25 @@ function appendBubble(text, role, showActions = true) {
                 const icon = e.currentTarget.querySelector('i');
                 icon.classList.add('spin-once');
                 icon.addEventListener('animationend', () => icon.classList.remove('spin-once'), { once: true });
-                const userBubbles  = chatArea.querySelectorAll('.chat-bubble--user');
-                const lastUserText = userBubbles[userBubbles.length - 1]?.textContent;
+
+                const userBubbles    = chatArea.querySelectorAll('.chat-bubble--user');
+                const lastUserBubble = userBubbles[userBubbles.length - 1];
+                const lastUserText   = lastUserBubble?.textContent;
+
                 if (lastUserText) {
+                    // Remove the AI bubble and its actions row
+                    actions.remove();
+                    thinkingBubble.remove();
+
+                    // Remove the user actions row (sits right after the user bubble)
+                    if (lastUserBubble.nextElementSibling?.classList.contains('bubble-actions')) {
+                        lastUserBubble.nextElementSibling.remove();
+                    }
+
+                    // Remove the user bubble itself
+                    lastUserBubble.remove();
+
+                    // Now sendMessage() re-adds everything fresh
                     inputBox.value = lastUserText;
                     sendMessage();
                 }
@@ -302,9 +318,25 @@ async function sendMessage() {
                 const icon = e.currentTarget.querySelector('i');
                 icon.classList.add('spin-once');
                 icon.addEventListener('animationend', () => icon.classList.remove('spin-once'), { once: true });
-                const userBubbles   = chatArea.querySelectorAll('.chat-bubble--user');
-                const lastUserText  = userBubbles[userBubbles.length - 1]?.textContent;
+
+                const userBubbles    = chatArea.querySelectorAll('.chat-bubble--user');
+                const lastUserBubble = userBubbles[userBubbles.length - 1];
+                const lastUserText   = lastUserBubble?.textContent;
+
                 if (lastUserText) {
+                    // Remove the AI bubble and its actions row
+                    actions.remove();
+                    thinkingBubble.remove();
+
+                    // Remove the user actions row (sits right after the user bubble)
+                    if (lastUserBubble.nextElementSibling?.classList.contains('bubble-actions')) {
+                        lastUserBubble.nextElementSibling.remove();
+                    }
+
+                    // Remove the user bubble itself
+                    lastUserBubble.remove();
+
+                    // Now sendMessage() re-adds everything fresh
                     inputBox.value = lastUserText;
                     sendMessage();
                 }
