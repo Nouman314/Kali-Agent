@@ -32,7 +32,7 @@ if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
 # ── Gemini Config ────────────────────────────────────────────────
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-DEFAULT_MODEL      = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.1-flash-lite"
 SYSTEM_INSTRUCTION = (
     "You are Kali Agent, a helpful and intelligent AI assistant "
     "built into a Chrome extension. Be concise, accurate, and friendly."

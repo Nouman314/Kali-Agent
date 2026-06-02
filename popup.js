@@ -41,7 +41,7 @@
 
 // ── Constants ────────────────────────────────────────────────────
 const BACKEND_URL = 'http://localhost:5000/chat';
-let currentModel  = 'gemini-2.5-flash';
+let currentModel  = 'gemini-3.1-flash-lite';
 
 const THINKING_PHRASES = [
     'Thinking...', 'Processing...', 'Analyzing...',
