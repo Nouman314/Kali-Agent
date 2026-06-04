@@ -88,7 +88,7 @@ function appendBubble(text, role, showActions = true) {
 
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble chat-bubble--${role}`;
-    bubble.dataset.rawText = role === 'ai' ? text : '';
+    bubble.dataset.rawText = text;
     bubble.innerHTML = role === 'ai' ? marked.parse(text) : text;
 
     Object.assign(bubble.style, {
@@ -132,13 +132,72 @@ function appendBubble(text, role, showActions = true) {
         if (role === 'user') {
             const editBtn = actions.querySelector('[title="Edit"]');
             
-            // Initial check to disable if appending during a response
             if (isAiResponding) editBtn.classList.add('disabled');
 
             editBtn.addEventListener('click', () => {
-                if (isAiResponding) return; // Prevent clicking while AI generates
-                inputBox.value = text;
-                inputBox.focus();
+                if (isAiResponding) return;
+                
+                actions.style.display = 'none';
+                const currentText = bubble.dataset.rawText || bubble.textContent;
+                const bubbleWidth = Math.max(280, Math.ceil(bubble.getBoundingClientRect().width));
+
+                bubble.classList.add('chat-bubble--editing');
+                bubble.dataset.editWidth = `${bubbleWidth}px`;
+                bubble.style.width = bubble.dataset.editWidth;
+                bubble.style.maxWidth = bubble.dataset.editWidth;
+                bubble.textContent = '';
+
+                const editContainer = document.createElement('div');
+                editContainer.className = 'edit-container';
+                editContainer.innerHTML = `
+                    <textarea class="edit-textarea"></textarea>
+                    <div class="edit-actions">
+                        <button class="edit-btn edit-btn-cancel">Cancel</button>
+                        <button class="edit-btn edit-btn-save">Save & Send</button>
+                    </div>
+                `;
+                bubble.appendChild(editContainer);
+
+                const textarea = editContainer.querySelector('.edit-textarea');
+                textarea.value = currentText;
+                textarea.focus();
+                textarea.style.height = textarea.scrollHeight + 'px';
+                
+                textarea.addEventListener('input', () => {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = textarea.scrollHeight + 'px';
+                });
+
+                const restoreBubble = (nextText) => {
+                    bubble.classList.remove('chat-bubble--editing');
+                    bubble.style.width = '';
+                    bubble.style.maxWidth = role === 'user' ? '80%' : '95%';
+                    delete bubble.dataset.editWidth;
+                    bubble.innerHTML = '';
+                    bubble.textContent = nextText;
+                    bubble.dataset.rawText = nextText;
+                    actions.style.display = 'flex';
+                };
+
+                editContainer.querySelector('.edit-btn-cancel').addEventListener('click', () => {
+                    restoreBubble(currentText);
+                });
+
+                editContainer.querySelector('.edit-btn-save').addEventListener('click', () => {
+                    const newText = textarea.value.trim();
+                    if (!newText) return;
+
+                    restoreBubble(newText);
+
+                    let next = wrapper.nextElementSibling;
+                    while (next) {
+                        const temp = next;
+                        next = next.nextElementSibling;
+                        temp.remove();
+                    }
+
+                    processAiResponse(newText);
+                });
             });
         }
 
@@ -162,15 +221,13 @@ function appendBubble(text, role, showActions = true) {
 
                 const userBubbles    = chatArea.querySelectorAll('.chat-bubble--user');
                 const lastUserBubble = userBubbles[userBubbles.length - 1];
-                const lastUserText   = lastUserBubble?.textContent;
+                const lastUserText   = lastUserBubble?.dataset.rawText || lastUserBubble?.textContent;
 
                 if (lastUserText) {
-                    // Cleaner cleanup with wrappers
-                    bubble.parentNode.remove();      // Removes AI wrapper
-                    lastUserBubble.parentNode.remove(); // Removes User wrapper
-
-                    inputBox.value = lastUserText;
-                    sendMessage();
+                    thinkingBubble.parentNode.remove();
+                    lastUserBubble.parentNode.remove();
+                    appendBubble(lastUserText, 'user');
+                    processAiResponse(lastUserText);
                 }
             });
         }
@@ -232,18 +289,18 @@ async function sendMessage() {
     inputBox.style.height = '100px';
 
     appendBubble(text, 'user');
+    await processAiResponse(text);
+}
 
-    // --- 1. Lock User Actions ---
+async function processAiResponse(text) {
     isAiResponding = true;
     document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
         btn.classList.add('disabled');
     });
 
-    // Pass false so the thinking bubble gets no action icons
     const thinkingBubble = appendBubble('', 'ai', false);
     let phraseIndex = 0;
 
-    // Cycles through shimmer phrases while waiting for the backend response
     function renderPhrase() {
         thinkingBubble.innerHTML = '';
         const wrapper = document.createElement('span');
@@ -274,17 +331,10 @@ async function sendMessage() {
 
         if (!response.ok || data.error) {
             thinkingBubble.textContent = `⚠️ ${data.error || 'Server error'}`;
-            
-            // --- 2. Unlock User Actions on Error ---
-            isAiResponding = false;
-            document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
-                btn.classList.remove('disabled');
-            });
         } else {
             thinkingBubble.dataset.rawText = data.reply;
             await typeText(thinkingBubble, data.reply, 6);
 
-            // Add action icons after the reply has finished typing
             const actions = document.createElement('div');
             actions.className = 'bubble-actions';
             actions.innerHTML = `
@@ -323,39 +373,29 @@ async function sendMessage() {
 
                 const userBubbles    = chatArea.querySelectorAll('.chat-bubble--user');
                 const lastUserBubble = userBubbles[userBubbles.length - 1];
-                const lastUserText   = lastUserBubble?.textContent;
+                const lastUserText   = lastUserBubble?.dataset.rawText || lastUserBubble?.textContent;
 
                 if (lastUserText) {
-                    // Cleaner cleanup with wrappers
                     thinkingBubble.parentNode.remove();
                     lastUserBubble.parentNode.remove();
-                    inputBox.value = lastUserText;
-                    sendMessage();
+                    appendBubble(lastUserText, 'user');
+                    processAiResponse(lastUserText);
                 }
             });
 
-            // --- 3. Append AI actions to the WRAPPER, not the chatArea ---
             thinkingBubble.parentNode.appendChild(actions);
             chatArea.scrollTop = chatArea.scrollHeight;
-            
-            // --- 4. Unlock User Actions on Success ---
-            isAiResponding = false;
-            document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
-                btn.classList.remove('disabled');
-            });
         }
     } catch (err) {
         clearInterval(thinkingInterval);
         thinkingBubble.innerHTML   = '';
-        thinkingBubble.textContent = '⚠️ Could not reach the backend. Is server.py running? (python server.py)';
-        
-        // --- 5. Unlock User Actions on Error ---
+        thinkingBubble.textContent = '⚠️ Could not reach the backend. Is server.py running?';
+        console.error('[Kali Agent] Fetch error:', err);
+    } finally {
         isAiResponding = false;
         document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
             btn.classList.remove('disabled');
         });
-        
-        console.error('[Kali Agent] Fetch error:', err);
     }
 }
 
@@ -385,7 +425,11 @@ inputBox.addEventListener('keydown', function (e) {
 
 try {
     document.querySelector('.header-actions .icon-btn[aria-label="New chat"]').addEventListener('click', () => {
+        if (isAiResponding) return;
         renderEmptyState();
+        inputBox.value = '';
+        inputBox.style.height = '100px';
+        isAiResponding = false;
     });
 } catch(e) {}
 

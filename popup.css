@@ -564,3 +564,98 @@ body {
     background: transparent !important;
     color: #9ca3af !important;
 }
+
+/* --- Inline Editor (ChatGPT Style) --- */
+.chat-bubble--user.chat-bubble--editing {
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+.edit-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.edit-textarea {
+    width: 100%;
+    min-width: 0;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    border-radius: 12px;
+    color: #ffffff;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: none;
+    min-height: 60px;
+    outline: none;
+    line-height: 1.5;
+    box-sizing: border-box;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.edit-textarea:focus {
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.edit-textarea::-webkit-scrollbar {
+    width: 6px;
+}
+
+.edit-textarea::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+}
+
+.edit-textarea::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 3px;
+}
+
+.edit-textarea::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.edit-btn {
+    padding: 7px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    border: none;
+    font-weight: 500;
+    transition: all 0.15s;
+    line-height: 1;
+}
+
+.edit-btn-cancel {
+    background: transparent;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+}
+
+.edit-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.edit-btn-save {
+    background: #ffffff;
+    color: #4b3fd8;
+}
+
+.edit-btn-save:hover {
+    background: #f3f4f6;
+}
