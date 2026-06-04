@@ -42,6 +42,7 @@
 // ── Constants ────────────────────────────────────────────────────
 const BACKEND_URL = 'http://localhost:5000/chat';
 let currentModel  = 'gemini-3.1-flash-lite';
+let isAiResponding = false; // Track AI generating state
 
 const THINKING_PHRASES = [
     'Thinking...', 'Processing...', 'Analyzing...',
@@ -81,6 +82,10 @@ function hideEmptyState() {
 function appendBubble(text, role, showActions = true) {
     hideEmptyState();
 
+    // 1. Create a parent wrapper for hover states
+    const wrapper = document.createElement('div');
+    wrapper.className = `message-wrapper message-wrapper--${role}`;
+
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble chat-bubble--${role}`;
     bubble.dataset.rawText = role === 'ai' ? text : '';
@@ -90,30 +95,20 @@ function appendBubble(text, role, showActions = true) {
         maxWidth:     role === 'user' ? '80%' : '95%',
         padding:      '10px 14px',
         borderRadius: role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-        marginBottom: '10px',
+        marginBottom: '4px',
         lineHeight:   '1.5',
         fontSize:     '14px',
         wordBreak:    'break-word',
-        alignSelf:    role === 'user' ? 'flex-end' : 'flex-start',
         background:   role === 'user' ? 'linear-gradient(135deg, #6073ea, #4b3fd8)' : '#f3f4f6',
         color:        role === 'user' ? '#fff' : '#111111',
         border:       role === 'ai'   ? '1px solid rgba(0,0,0,0.08)' : 'none',
     });
 
-    // Ensure chat area is a flex column (decoupled from popup.css)
-    Object.assign(chatArea.style, {
-        display:       'flex',
-        flexDirection: 'column',
-        padding:       '16px',
-        overflowY:     'auto',
-    });
-
-    chatArea.appendChild(bubble);
+    wrapper.appendChild(bubble);
 
     if (showActions) {
         const actions = document.createElement('div');
-        actions.className       = 'bubble-actions';
-        actions.style.alignSelf = role === 'user' ? 'flex-end' : 'flex-start';
+        actions.className = 'bubble-actions';
 
         actions.innerHTML = role === 'user'
             ? `<button title="Edit"><i class="ti ti-edit"></i></button>
@@ -123,7 +118,6 @@ function appendBubble(text, role, showActions = true) {
                <button title="Dislike"><i class="ti ti-thumb-down"></i></button>
                <button title="Retry"><i class="ti ti-refresh"></i></button>`;
 
-        // Copy works for both roles
         actions.querySelector('[title="Copy"]').addEventListener('click', (e) => {
             navigator.clipboard.writeText(bubble.dataset.rawText || text);
             const btn = e.currentTarget;
@@ -136,14 +130,19 @@ function appendBubble(text, role, showActions = true) {
         });
 
         if (role === 'user') {
-            actions.querySelector('[title="Edit"]').addEventListener('click', () => {
+            const editBtn = actions.querySelector('[title="Edit"]');
+            
+            // Initial check to disable if appending during a response
+            if (isAiResponding) editBtn.classList.add('disabled');
+
+            editBtn.addEventListener('click', () => {
+                if (isAiResponding) return; // Prevent clicking while AI generates
                 inputBox.value = text;
                 inputBox.focus();
             });
         }
 
         if (role === 'ai') {
-
             actions.querySelector('[title="Like"]').addEventListener('click', (e) => {
                 const btn = e.currentTarget;
                 const isActive = btn.style.color === 'rgb(75, 63, 216)';
@@ -166,28 +165,20 @@ function appendBubble(text, role, showActions = true) {
                 const lastUserText   = lastUserBubble?.textContent;
 
                 if (lastUserText) {
-                    // Remove the AI bubble and its actions row
-                    actions.remove();
-                    thinkingBubble.remove();
+                    // Cleaner cleanup with wrappers
+                    bubble.parentNode.remove();      // Removes AI wrapper
+                    lastUserBubble.parentNode.remove(); // Removes User wrapper
 
-                    // Remove the user actions row (sits right after the user bubble)
-                    if (lastUserBubble.nextElementSibling?.classList.contains('bubble-actions')) {
-                        lastUserBubble.nextElementSibling.remove();
-                    }
-
-                    // Remove the user bubble itself
-                    lastUserBubble.remove();
-
-                    // Now sendMessage() re-adds everything fresh
                     inputBox.value = lastUserText;
                     sendMessage();
                 }
             });
         }
 
-        chatArea.appendChild(actions);
+        wrapper.appendChild(actions);
     }
 
+    chatArea.appendChild(wrapper);
     chatArea.scrollTop = chatArea.scrollHeight;
     return bubble;
 }
@@ -242,6 +233,12 @@ async function sendMessage() {
 
     appendBubble(text, 'user');
 
+    // --- 1. Lock User Actions ---
+    isAiResponding = true;
+    document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
+        btn.classList.add('disabled');
+    });
+
     // Pass false so the thinking bubble gets no action icons
     const thinkingBubble = appendBubble('', 'ai', false);
     let phraseIndex = 0;
@@ -277,14 +274,19 @@ async function sendMessage() {
 
         if (!response.ok || data.error) {
             thinkingBubble.textContent = `⚠️ ${data.error || 'Server error'}`;
+            
+            // --- 2. Unlock User Actions on Error ---
+            isAiResponding = false;
+            document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
+                btn.classList.remove('disabled');
+            });
         } else {
             thinkingBubble.dataset.rawText = data.reply;
             await typeText(thinkingBubble, data.reply, 6);
 
             // Add action icons after the reply has finished typing
             const actions = document.createElement('div');
-            actions.className       = 'bubble-actions';
-            actions.style.alignSelf = 'flex-start';
+            actions.className = 'bubble-actions';
             actions.innerHTML = `
                 <button title="Copy"><i class="ti ti-copy"></i></button>
                 <button title="Like"><i class="ti ti-thumb-up"></i></button>
@@ -324,31 +326,35 @@ async function sendMessage() {
                 const lastUserText   = lastUserBubble?.textContent;
 
                 if (lastUserText) {
-                    // Remove the AI bubble and its actions row
-                    actions.remove();
-                    thinkingBubble.remove();
-
-                    // Remove the user actions row (sits right after the user bubble)
-                    if (lastUserBubble.nextElementSibling?.classList.contains('bubble-actions')) {
-                        lastUserBubble.nextElementSibling.remove();
-                    }
-
-                    // Remove the user bubble itself
-                    lastUserBubble.remove();
-
-                    // Now sendMessage() re-adds everything fresh
+                    // Cleaner cleanup with wrappers
+                    thinkingBubble.parentNode.remove();
+                    lastUserBubble.parentNode.remove();
                     inputBox.value = lastUserText;
                     sendMessage();
                 }
             });
 
-            chatArea.appendChild(actions);
+            // --- 3. Append AI actions to the WRAPPER, not the chatArea ---
+            thinkingBubble.parentNode.appendChild(actions);
             chatArea.scrollTop = chatArea.scrollHeight;
+            
+            // --- 4. Unlock User Actions on Success ---
+            isAiResponding = false;
+            document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
+                btn.classList.remove('disabled');
+            });
         }
     } catch (err) {
         clearInterval(thinkingInterval);
         thinkingBubble.innerHTML   = '';
         thinkingBubble.textContent = '⚠️ Could not reach the backend. Is server.py running? (python server.py)';
+        
+        // --- 5. Unlock User Actions on Error ---
+        isAiResponding = false;
+        document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
+            btn.classList.remove('disabled');
+        });
+        
         console.error('[Kali Agent] Fetch error:', err);
     }
 }
