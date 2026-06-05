@@ -42,7 +42,8 @@
 // ── Constants ────────────────────────────────────────────────────
 const BACKEND_URL = 'http://localhost:5000/chat';
 let currentModel  = 'gemini-3.1-flash-lite';
-let isAiResponding = false; // Track AI generating state
+let isAiResponding = false;
+let abortController = null;
 
 const THINKING_PHRASES = [
     'Thinking...', 'Processing...', 'Analyzing...',
@@ -240,11 +241,18 @@ function appendBubble(text, role, showActions = true) {
     return bubble;
 }
 
-function typeText(element, text, speed = 6) {
+function typeText(element, text, speed = 6, signal = null) {
     element.innerHTML = '';
     let i = 0;
     return new Promise((resolve) => {
         function type() {
+            if (signal && signal.aborted) {
+                element.innerHTML = marked.parse(text.slice(0, i));
+                element.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+                chatArea.scrollTop = chatArea.scrollHeight;
+                return resolve();
+            }
+
             if (i < text.length) {
                 i++;
                 element.innerHTML = marked.parse(text.slice(0, i));
@@ -294,6 +302,11 @@ async function sendMessage() {
 
 async function processAiResponse(text) {
     isAiResponding = true;
+    abortController = new AbortController();
+
+    const sendBtnIcon = document.querySelector('.send-btn i');
+    if (sendBtnIcon) sendBtnIcon.className = 'ti ti-square-filled';
+
     document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
         btn.classList.add('disabled');
     });
@@ -323,6 +336,7 @@ async function processAiResponse(text) {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({ message: text, model: currentModel }),
+            signal:  abortController.signal
         });
 
         const data = await response.json();
@@ -333,7 +347,7 @@ async function processAiResponse(text) {
             thinkingBubble.textContent = `⚠️ ${data.error || 'Server error'}`;
         } else {
             thinkingBubble.dataset.rawText = data.reply;
-            await typeText(thinkingBubble, data.reply, 6);
+            await typeText(thinkingBubble, data.reply, 6, abortController.signal);
 
             const actions = document.createElement('div');
             actions.className = 'bubble-actions';
@@ -389,10 +403,15 @@ async function processAiResponse(text) {
     } catch (err) {
         clearInterval(thinkingInterval);
         thinkingBubble.innerHTML   = '';
-        thinkingBubble.textContent = '⚠️ Could not reach the backend. Is server.py running?';
-        console.error('[Kali Agent] Fetch error:', err);
+        if (err.name === 'AbortError') {
+            thinkingBubble.textContent = '⚠️ Generation stopped.';
+        } else {
+            thinkingBubble.textContent = '⚠️ Could not reach the backend. Is server.py running?';
+            console.error('[Kali Agent] Fetch error:', err);
+        }
     } finally {
         isAiResponding = false;
+        if (sendBtnIcon) sendBtnIcon.className = 'ti ti-arrow-up';
         document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
             btn.classList.remove('disabled');
         });
@@ -419,7 +438,7 @@ inputBox.addEventListener('input', function () {
 inputBox.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        sendMessage();
+        if (!isAiResponding) sendMessage();
     }
 });
 
@@ -472,7 +491,14 @@ document.addEventListener('mousemove', function (e) {
 
 document.addEventListener('mouseup', () => { isResizing = false; });
 
-document.querySelector('.send-btn').addEventListener('click', sendMessage);
+// Find and replace your existing send-btn listener with this:
+document.querySelector('.send-btn').addEventListener('click', () => {
+    if (isAiResponding) {
+        if (abortController) abortController.abort(); // Stop generating
+    } else {
+        sendMessage(); // Send message
+    }
+});
 
 modelSelectBtn.addEventListener('click', (e) => {
     e.stopPropagation();
