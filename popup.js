@@ -50,6 +50,8 @@ const THINKING_PHRASES = [
     'Generating...', 'Almost there...'
 ];
 
+const DEFAULT_INPUT_HEIGHT = 100;
+
 // ── DOM References ───────────────────────────────────────────────
 const inputBox          = document.querySelector('.input-box');
 const inputWrapper      = document.querySelector('.input-box-wrapper');
@@ -78,6 +80,10 @@ function renderEmptyState() {
 function hideEmptyState() {
     const currentEmptyState = chatArea.querySelector('.empty-state');
     if (currentEmptyState) currentEmptyState.style.display = 'none';
+}
+
+function resetComposerHeight() {
+    inputBox.style.height = `${DEFAULT_INPUT_HEIGHT}px`;
 }
 
 function appendBubble(text, role, showActions = true) {
@@ -293,8 +299,8 @@ async function sendMessage() {
     const text = inputBox.value.trim();
     if (!text) return;
 
-    inputBox.value        = '';
-    inputBox.style.height = '100px';
+    inputBox.value = '';
+    resetComposerHeight();
 
     appendBubble(text, 'user');
     await processAiResponse(text);
@@ -447,7 +453,7 @@ try {
         if (isAiResponding) return;
         renderEmptyState();
         inputBox.value = '';
-        inputBox.style.height = '100px';
+        resetComposerHeight();
         isAiResponding = false;
     });
 } catch(e) {}
@@ -513,4 +519,5 @@ document.addEventListener('click', (e) => {
 
 modelOptions.forEach(option => option.addEventListener('click', () => handleModelSelect(option)));
 
+resetComposerHeight();
 renderEmptyState();

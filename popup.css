@@ -232,7 +232,7 @@ body {
     border: none;
     border-radius: 16px 16px 0 0;
     background: transparent;
-    min-height: 80px;
+    min-height: 100px;
     max-height: 200px;
     padding: 12px 14px 6px;
     font-size: 14px;
@@ -243,6 +243,7 @@ body {
     outline: none;
     cursor: text;
     line-height: 1.5;
+    box-sizing: border-box;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
