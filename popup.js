@@ -156,6 +156,9 @@ function createAttachmentChip(entry, variant = 'composer') {
         } else if (entry.kind === 'image') {
             icon.innerHTML = '<i class="ti ti-photo" aria-hidden="true"></i>';
             icon.classList.add('attachment-icon--image');
+        } else if (entry.kind === 'docx') {
+            icon.innerHTML = '<i class="ti ti-file-type-doc" aria-hidden="true"></i>';
+            icon.classList.add('attachment-icon--docx');
         } else {
             icon.innerHTML = '<i class="ti ti-file" aria-hidden="true"></i>';
             icon.classList.add('attachment-icon--file');

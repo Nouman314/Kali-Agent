@@ -324,6 +324,15 @@ body {
     color: #0d9488;
 }
 
+.attachment-icon--docx {
+    background: #eef2ff;
+    color: #6366f1;
+}
+
+.attachment-icon--docx i {
+    color: #6366f1;
+}
+
 /* Other file types - Indigo to match primary accent */
 .attachment-icon--file {
     background: #eae5ff;
