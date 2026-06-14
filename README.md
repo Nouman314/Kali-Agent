@@ -18,6 +18,7 @@ Features
 * Multi-turn conversation support
 * Model selection for different Gemini variants
 * Message actions include retry, copy, edit, and feedback.
+* Attach PDFs, DOCX, PPTX, and common image files from the composer
 * Local Flask backend with CORS support
 
 ---
@@ -95,6 +96,7 @@ Usage
 
 * Open the extension side panel.
 * Enter a message and submit it.
+* Use the plus button to attach up to 5 files per message.
 * Optionally select a Gemini model.
 * Use message actions to retry, edit, copy, or provide feedback.
 
@@ -112,6 +114,19 @@ Request:
   "message": "Hello",
   "model": "gemini-2.5-flash"
 }
+
+Multipart form-data is also supported for attachments:
+
+* `message`: optional text prompt
+* `model`: selected model name
+* `attachments`: up to 5 files, each up to 10 MB
+
+Supported attachments:
+
+* PDF
+* DOCX
+* PPTX
+* PNG, JPG, JPEG, GIF, WEBP
 
 Response:
 

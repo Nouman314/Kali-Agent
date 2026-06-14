@@ -41,6 +41,7 @@
 
 // ── Constants ────────────────────────────────────────────────────
 const BACKEND_URL = 'http://localhost:5000/chat';
+const RESET_URL    = 'http://localhost:5000/reset';
 let currentModel  = 'gemini-3.1-flash-lite';
 let isAiResponding = false;
 let abortController = null;
@@ -55,6 +56,9 @@ const DEFAULT_INPUT_HEIGHT = 100;
 // ── DOM References ───────────────────────────────────────────────
 const inputBox          = document.querySelector('.input-box');
 const inputWrapper      = document.querySelector('.input-box-wrapper');
+const attachmentInput   = document.getElementById('attachmentInput');
+const attachmentTray    = document.getElementById('attachmentTray');
+const attachmentError   = document.getElementById('attachmentError');
 const chatArea          = document.querySelector('.chat-area');
 const emptyStateTemplate = document.getElementById('emptyStateTemplate');
 const EMPTY_STATE_HTML   = emptyStateTemplate ? emptyStateTemplate.innerHTML.trim() : '';
@@ -68,6 +72,9 @@ const sidebarShell      = document.querySelector('.sidebar-shell');
 let isResizing  = false;
 let startY      = 0;
 let startHeight = 0;
+
+let attachedFiles = [];
+let attachmentIdCounter = 0;
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -86,7 +93,198 @@ function resetComposerHeight() {
     inputBox.style.height = `${DEFAULT_INPUT_HEIGHT}px`;
 }
 
-function appendBubble(text, role, showActions = true) {
+function formatFileSize(bytes) {
+    if (!Number.isFinite(bytes)) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getAttachmentKind(file) {
+    const mime = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
+
+    if (mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp)$/i.test(name)) return 'image';
+    if (mime === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+    if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || name.endsWith('.docx')) return 'docx';
+    if (mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || name.endsWith('.pptx')) return 'pptx';
+    return 'unsupported';
+}
+
+function showAttachmentError(message) {
+    if (!attachmentError) return;
+    if (!message) {
+        attachmentError.hidden = true;
+        attachmentError.textContent = '';
+        return;
+    }
+
+    attachmentError.textContent = message;
+    attachmentError.hidden = false;
+    clearTimeout(showAttachmentError.hideTimer);
+    showAttachmentError.hideTimer = setTimeout(() => {
+        attachmentError.hidden = true;
+        attachmentError.textContent = '';
+    }, 3500);
+}
+
+function clearAttachments() {
+    attachedFiles.forEach((entry) => {
+        if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+    });
+    attachedFiles = [];
+    if (attachmentInput) attachmentInput.value = '';
+    renderAttachmentTray();
+}
+
+function createAttachmentChip(entry, variant = 'composer') {
+    const chip = document.createElement('div');
+    chip.className = `attachment-chip${entry.kind === 'image' ? ' attachment-chip--image' : ''}${variant === 'bubble' ? ' attachment-chip--bubble' : ''}`;
+
+    if (variant === 'composer' && entry.kind === 'image' && entry.previewUrl) {
+        const preview = document.createElement('img');
+        preview.className = 'attachment-preview';
+        preview.src = entry.previewUrl;
+        preview.alt = entry.file.name;
+        chip.appendChild(preview);
+    } else {
+        const icon = document.createElement('div');
+        icon.className = 'attachment-icon';
+        icon.innerHTML = entry.kind === 'pdf'
+            ? '<i class="ti ti-file-type-pdf" aria-hidden="true"></i>'
+            : '<i class="ti ti-file-text" aria-hidden="true"></i>';
+        chip.appendChild(icon);
+    }
+
+    const meta = document.createElement('div');
+    meta.className = 'attachment-meta';
+
+    const name = document.createElement('div');
+    name.className = 'attachment-name';
+    name.textContent = entry.file.name;
+
+    const size = document.createElement('div');
+    size.className = 'attachment-size';
+    size.textContent = formatFileSize(entry.file.size);
+
+    meta.appendChild(name);
+    meta.appendChild(size);
+    chip.appendChild(meta);
+
+    if (variant === 'composer') {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'attachment-remove';
+        removeBtn.setAttribute('aria-label', `Remove ${entry.file.name}`);
+        removeBtn.innerHTML = '<i class="ti ti-x" aria-hidden="true"></i>';
+        removeBtn.addEventListener('click', () => removeAttachment(entry.id));
+        chip.appendChild(removeBtn);
+    }
+
+    return chip;
+}
+
+function removeAttachment(id) {
+    const next = [];
+    attachedFiles.forEach((entry) => {
+        if (entry.id === id) {
+            if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+            return;
+        }
+        next.push(entry);
+    });
+    attachedFiles = next;
+    renderAttachmentTray();
+}
+
+function addAttachments(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+
+    const remainingSlots = 5 - attachedFiles.length;
+    if (remainingSlots <= 0) {
+        showAttachmentError('You can attach up to 5 files at a time.');
+        return;
+    }
+
+    const accepted = [];
+    let hitLimit = false;
+    for (const file of files) {
+        if (accepted.length >= remainingSlots) {
+            hitLimit = true;
+            break;
+        }
+
+        const kind = getAttachmentKind(file);
+        if (kind === 'unsupported') {
+            showAttachmentError(`Unsupported file type: ${file.name}`);
+            continue;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            showAttachmentError(`${file.name} is larger than 10 MB.`);
+            continue;
+        }
+
+        const duplicate = attachedFiles.some((entry) =>
+            entry.file.name === file.name &&
+            entry.file.size === file.size &&
+            entry.file.lastModified === file.lastModified
+        ) || accepted.some((entry) =>
+            entry.file.name === file.name &&
+            entry.file.size === file.size &&
+            entry.file.lastModified === file.lastModified
+        );
+
+        if (duplicate) continue;
+
+        accepted.push({
+            id: ++attachmentIdCounter,
+            file,
+            kind,
+            previewUrl: kind === 'image' ? URL.createObjectURL(file) : '',
+        });
+    }
+
+    if (!accepted.length) return;
+
+    attachedFiles = attachedFiles.concat(accepted).slice(0, 5);
+    renderAttachmentTray();
+
+    if (hitLimit) {
+        showAttachmentError(`You can attach up to 5 files at a time.`);
+    }
+}
+
+function renderAttachmentTray() {
+    if (!attachmentTray) return;
+
+    attachmentTray.innerHTML = '';
+
+    if (!attachedFiles.length) {
+        attachmentTray.hidden = true;
+        showAttachmentError('');
+        return;
+    }
+
+    attachmentTray.hidden = false;
+    showAttachmentError('');
+
+    attachedFiles.forEach((entry) => {
+        attachmentTray.appendChild(createAttachmentChip(entry, 'composer'));
+    });
+}
+
+function buildUserBubbleText(text, attachments) {
+    const message = text.trim();
+    if (message) return message;
+
+    if (attachments.length) return `Attached ${attachments.length} file${attachments.length === 1 ? '' : 's'}`;
+
+    return '';
+}
+
+function appendBubble(text, role, showActions = true, displayText = text, rawText = text, attachments = []) {
     hideEmptyState();
 
     // 1. Create a parent wrapper for hover states
@@ -95,7 +293,8 @@ function appendBubble(text, role, showActions = true) {
 
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble chat-bubble--${role}`;
-    bubble.dataset.rawText = text;
+    bubble.dataset.rawText = rawText;
+    bubble._attachments = attachments;
     bubble.innerHTML = role === 'ai' ? marked.parse(text) : text;
 
     Object.assign(bubble.style, {
@@ -109,9 +308,23 @@ function appendBubble(text, role, showActions = true) {
         background:   role === 'user' ? 'linear-gradient(135deg, #6073ea, #4b3fd8)' : '#f3f4f6',
         color:        role === 'user' ? '#fff' : '#111111',
         border:       role === 'ai'   ? '1px solid rgba(0,0,0,0.08)' : 'none',
+        whiteSpace:   role === 'user' ? 'pre-wrap' : 'normal',
     });
 
+    if (role === 'user') {
+        bubble.textContent = displayText;
+    }
+
     wrapper.appendChild(bubble);
+
+    if (role === 'user' && attachments.length) {
+        const attachmentRow = document.createElement('div');
+        attachmentRow.className = 'message-attachments';
+        attachments.forEach((entry) => {
+            attachmentRow.appendChild(createAttachmentChip(entry, 'bubble'));
+        });
+        wrapper.appendChild(attachmentRow);
+    }
 
     if (showActions) {
         const actions = document.createElement('div');
@@ -192,7 +405,8 @@ function appendBubble(text, role, showActions = true) {
 
                 editContainer.querySelector('.edit-btn-save').addEventListener('click', () => {
                     const newText = textarea.value.trim();
-                    if (!newText) return;
+                    const originalAttachments = bubble._attachments || [];
+                    if (!newText && !originalAttachments.length) return;
 
                     restoreBubble(newText);
 
@@ -203,7 +417,7 @@ function appendBubble(text, role, showActions = true) {
                         temp.remove();
                     }
 
-                    processAiResponse(newText);
+                    processAiResponse({ text: newText, attachments: originalAttachments });
                 });
             });
         }
@@ -233,8 +447,9 @@ function appendBubble(text, role, showActions = true) {
                 if (lastUserText) {
                     thinkingBubble.parentNode.remove();
                     lastUserBubble.parentNode.remove();
-                    appendBubble(lastUserText, 'user');
-                    processAiResponse(lastUserText);
+                    const lastUserAttachments = lastUserBubble._attachments || [];
+                    appendBubble(lastUserText, 'user', true, lastUserText, lastUserText, lastUserAttachments);
+                    processAiResponse({ text: lastUserText, attachments: lastUserAttachments });
                 }
             });
         }
@@ -297,16 +512,26 @@ function tryStartResize(e) {
 
 async function sendMessage() {
     const text = inputBox.value.trim();
-    if (!text) return;
+    const attachments = attachedFiles.slice();
+    if (!text && !attachments.length) return;
 
     inputBox.value = '';
     resetComposerHeight();
 
-    appendBubble(text, 'user');
-    await processAiResponse(text);
+    const displayText = buildUserBubbleText(text, attachments);
+    const rawText = text.trim() || displayText;
+    appendBubble(displayText, 'user', true, displayText, rawText, attachments);
+
+    // Keep the composer clean while the request is in flight.
+    clearAttachments();
+
+    const success = await processAiResponse({
+        text,
+        attachments,
+    });
 }
 
-async function processAiResponse(text) {
+async function processAiResponse({ text, attachments = [] }) {
     isAiResponding = true;
     abortController = new AbortController();
 
@@ -338,12 +563,30 @@ async function processAiResponse(text) {
     }, 2000);
 
     try {
-        const response = await fetch(BACKEND_URL, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ message: text, model: currentModel }),
-            signal:  abortController.signal
-        });
+        const hasAttachments = attachments.length > 0;
+        let response;
+
+        if (hasAttachments) {
+            const formData = new FormData();
+            formData.append('message', text);
+            formData.append('model', currentModel);
+            attachments.forEach((entry) => {
+                formData.append('attachments', entry.file, entry.file.name);
+            });
+
+            response = await fetch(BACKEND_URL, {
+                method: 'POST',
+                body: formData,
+                signal: abortController.signal,
+            });
+        } else {
+            response = await fetch(BACKEND_URL, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ message: text, model: currentModel }),
+                signal:  abortController.signal
+            });
+        }
 
         const data = await response.json();
         clearInterval(thinkingInterval);
@@ -351,6 +594,7 @@ async function processAiResponse(text) {
 
         if (!response.ok || data.error) {
             thinkingBubble.textContent = `⚠️ ${data.error || 'Server error'}`;
+            return false;
         } else {
             thinkingBubble.dataset.rawText = data.reply;
             await typeText(thinkingBubble, data.reply, 6, abortController.signal);
@@ -398,13 +642,15 @@ async function processAiResponse(text) {
                 if (lastUserText) {
                     thinkingBubble.parentNode.remove();
                     lastUserBubble.parentNode.remove();
-                    appendBubble(lastUserText, 'user');
-                    processAiResponse(lastUserText);
+                    const lastUserAttachments = lastUserBubble._attachments || [];
+                    appendBubble(lastUserText, 'user', true, lastUserText, lastUserText, lastUserAttachments);
+                    processAiResponse({ text: lastUserText, attachments: lastUserAttachments });
                 }
             });
 
             thinkingBubble.parentNode.appendChild(actions);
             chatArea.scrollTop = chatArea.scrollHeight;
+            return true;
         }
     } catch (err) {
         clearInterval(thinkingInterval);
@@ -415,6 +661,7 @@ async function processAiResponse(text) {
             thinkingBubble.textContent = '⚠️ Could not reach the backend. Is server.py running?';
             console.error('[Kali Agent] Fetch error:', err);
         }
+        return false;
     } finally {
         isAiResponding = false;
         if (sendBtnIcon) sendBtnIcon.className = 'ti ti-arrow-up';
@@ -448,12 +695,30 @@ inputBox.addEventListener('keydown', function (e) {
     }
 });
 
+if (attachmentInput) {
+    attachmentInput.addEventListener('change', (e) => {
+        addAttachments(e.target.files);
+        e.target.value = '';
+    });
+}
+
+const plusBtn = document.querySelector('.plus-btn');
+if (plusBtn) {
+    plusBtn.addEventListener('click', () => {
+        if (isAiResponding) return;
+        showAttachmentError('');
+        attachmentInput?.click();
+    });
+}
+
 try {
     document.querySelector('.header-actions .icon-btn[aria-label="New chat"]').addEventListener('click', () => {
         if (isAiResponding) return;
         renderEmptyState();
         inputBox.value = '';
         resetComposerHeight();
+        clearAttachments();
+        fetch(RESET_URL, { method: 'POST' }).catch(() => {});
         isAiResponding = false;
     });
 } catch(e) {}
@@ -497,7 +762,6 @@ document.addEventListener('mousemove', function (e) {
 
 document.addEventListener('mouseup', () => { isResizing = false; });
 
-// Find and replace your existing send-btn listener with this:
 document.querySelector('.send-btn').addEventListener('click', () => {
     if (isAiResponding) {
         if (abortController) abortController.abort(); // Stop generating

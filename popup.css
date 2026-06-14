@@ -248,6 +248,124 @@ body {
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
+.attachment-input {
+    display: none;
+}
+
+.attachment-tray {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 12px 8px;
+    margin-top: -2px;
+}
+
+.attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 6px 8px;
+    min-width: 0;
+}
+
+.attachment-chip--image {
+    padding-left: 6px;
+}
+
+.attachment-chip--bubble {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.attachment-preview {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #f3f4f6;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.attachment-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #f3f4f6;
+    color: #4b3fd8;
+    font-size: 16px;
+}
+
+.attachment-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    max-width: 200px;
+}
+
+.attachment-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #111111;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachment-size {
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.attachment-remove {
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.attachment-remove:hover {
+    background: #f3f4f6;
+    color: #111111;
+}
+
+.message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+    max-width: 95%;
+    margin-top: 6px;
+}
+
+.message-attachments .attachment-chip {
+    max-width: 260px;
+}
+
+.attachment-error {
+    width: 100%;
+    font-size: 12px;
+    color: #b91c1c;
+    padding: 0 12px 6px;
+    margin-top: -2px;
+}
+
 .input-box::-webkit-scrollbar {
     width: 6px;
 }
@@ -515,6 +633,10 @@ body {
     padding: 0;
     color: #abb2bf;
     font-size: 13px;
+}
+
+.chat-bubble {
+    white-space: pre-wrap;
 }
 
 .hljs {
