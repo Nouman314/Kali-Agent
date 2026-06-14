@@ -304,6 +304,36 @@ body {
     font-size: 16px;
 }
 
+/* PDF file icon - Red accent matching alert/error states */
+.attachment-icon--pdf {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.attachment-icon--pdf i {
+    color: #dc2626;
+}
+
+/* Image file icon - Teal/Cyan to complement the purple design system */
+.attachment-icon--image {
+    background: #ccfbf1;
+    color: #0d9488;
+}
+
+.attachment-icon--image i {
+    color: #0d9488;
+}
+
+/* Other file types - Indigo to match primary accent */
+.attachment-icon--file {
+    background: #eae5ff;
+    color: #6366f1;
+}
+
+.attachment-icon--file i {
+    color: #6366f1;
+}
+
 .attachment-meta {
     display: flex;
     flex-direction: column;

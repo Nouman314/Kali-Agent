@@ -150,9 +150,16 @@ function createAttachmentChip(entry, variant = 'composer') {
     } else {
         const icon = document.createElement('div');
         icon.className = 'attachment-icon';
-        icon.innerHTML = entry.kind === 'pdf'
-            ? '<i class="ti ti-file-type-pdf" aria-hidden="true"></i>'
-            : '<i class="ti ti-file-text" aria-hidden="true"></i>';
+        if (entry.kind === 'pdf') {
+            icon.innerHTML = '<i class="ti ti-file-type-pdf" aria-hidden="true"></i>';
+            icon.classList.add('attachment-icon--pdf');
+        } else if (entry.kind === 'image') {
+            icon.innerHTML = '<i class="ti ti-photo" aria-hidden="true"></i>';
+            icon.classList.add('attachment-icon--image');
+        } else {
+            icon.innerHTML = '<i class="ti ti-file" aria-hidden="true"></i>';
+            icon.classList.add('attachment-icon--file');
+        }
         chip.appendChild(icon);
     }
 
