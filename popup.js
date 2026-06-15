@@ -45,6 +45,7 @@ const RESET_URL    = 'http://localhost:5000/reset';
 let currentModel  = 'gemini-3.1-flash-lite';
 let isAiResponding = false;
 let abortController = null;
+let userHasScrolledUp = false;
 
 const THINKING_PHRASES = [
     'Thinking...', 'Processing...', 'Analyzing...',
@@ -67,6 +68,11 @@ const modelDropdown     = document.getElementById('modelDropdown');
 const selectedModelText = document.getElementById('selectedModelText');
 const modelOptions      = document.querySelectorAll('.model-option');
 const sidebarShell      = document.querySelector('.sidebar-shell');
+
+chatArea.addEventListener('scroll', () => {
+    const distanceFromBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight;
+    userHasScrolledUp = distanceFromBottom > 60;
+});
 
 // ── Resize State ─────────────────────────────────────────────────
 let isResizing  = false;
@@ -437,12 +443,14 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
                 const btn = e.currentTarget;
                 const isActive = btn.style.color === 'rgb(75, 63, 216)';
                 btn.style.color = isActive ? '' : '#4b3fd8';
+                actions.querySelector('[title="Dislike"]').style.color = '';
             });
 
             actions.querySelector('[title="Dislike"]').addEventListener('click', (e) => {
                 const btn = e.currentTarget;
                 const isActive = btn.style.color === 'rgb(239, 68, 68)';
                 btn.style.color = isActive ? '' : '#ef4444';
+                actions.querySelector('[title="Like"]').style.color = '';
             });
 
             actions.querySelector('[title="Retry"]').addEventListener('click', (e) => {
@@ -480,19 +488,19 @@ function typeText(element, text, speed = 6, signal = null) {
             if (signal && signal.aborted) {
                 element.innerHTML = marked.parse(text.slice(0, i));
                 element.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
-                chatArea.scrollTop = chatArea.scrollHeight;
+                if (!userHasScrolledUp) chatArea.scrollTop = chatArea.scrollHeight;
                 return resolve();
             }
 
             if (i < text.length) {
                 i++;
                 element.innerHTML = marked.parse(text.slice(0, i));
-                chatArea.scrollTop = chatArea.scrollHeight;
+                if (!userHasScrolledUp) chatArea.scrollTop = chatArea.scrollHeight;
                 setTimeout(type, speed);
             } else {
                 element.innerHTML = marked.parse(text);
                 element.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
-                chatArea.scrollTop = chatArea.scrollHeight;
+                if (!userHasScrolledUp) chatArea.scrollTop = chatArea.scrollHeight;
                 resolve();
             }
         }
@@ -521,6 +529,7 @@ function tryStartResize(e) {
 }
 
 async function sendMessage() {
+    userHasScrolledUp = false;
     const text = inputBox.value.trim();
     const attachments = attachedFiles.slice();
     if (!text && !attachments.length) return;
@@ -632,12 +641,14 @@ async function processAiResponse({ text, attachments = [] }) {
                 const btn = e.currentTarget;
                 const isActive = btn.style.color === 'rgb(75, 63, 216)';
                 btn.style.color = isActive ? '' : '#4b3fd8';
+                actions.querySelector('[title="Dislike"]').style.color = '';
             });
 
             actions.querySelector('[title="Dislike"]').addEventListener('click', (e) => {
                 const btn = e.currentTarget;
                 const isActive = btn.style.color === 'rgb(239, 68, 68)';
                 btn.style.color = isActive ? '' : '#ef4444';
+                actions.querySelector('[title="Like"]').style.color = '';
             });
 
             actions.querySelector('[title="Retry"]').addEventListener('click', (e) => {
