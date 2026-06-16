@@ -170,8 +170,8 @@ function createAttachmentChip(entry, variant = 'composer') {
             icon.innerHTML = '<i class="ti ti-file-type-doc" aria-hidden="true"></i>';
             icon.classList.add('attachment-icon--docx');
         } else {
-            icon.innerHTML = '<i class="ti ti-file" aria-hidden="true"></i>';
-            icon.classList.add('attachment-icon--file');
+            icon.innerHTML = '<i class="ti ti-file-type-ppt" aria-hidden="true"></i>';
+            icon.classList.add('attachment-icon--ppt');
         }
         chip.appendChild(icon);
     }

@@ -334,13 +334,13 @@ body {
 }
 
 /* Other file types - Indigo to match primary accent */
-.attachment-icon--file {
-    background: #eae5ff;
-    color: #6366f1;
+.attachment-icon--ppt {
+    background: #fff4e5;
+    color: #df7a00;
 }
 
-.attachment-icon--file i {
-    color: #6366f1;
+.attachment-icon--ppt i {
+    color: #f8a202;
 }
 
 .attachment-meta {
