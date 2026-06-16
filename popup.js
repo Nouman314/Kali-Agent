@@ -316,14 +316,14 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
     Object.assign(bubble.style, {
         maxWidth:     role === 'user' ? '80%' : '95%',
         padding:      '10px 14px',
-        borderRadius: role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+        borderRadius: role === 'user' ? '18px 18px 4px 18px' : '0',
         marginBottom: '4px',
         lineHeight:   '1.5',
         fontSize:     '14px',
         wordBreak:    'break-word',
-        background:   role === 'user' ? 'linear-gradient(135deg, #6073ea, #4b3fd8)' : '#f3f4f6',
+        background:   role === 'user' ? 'linear-gradient(135deg, #6073ea, #4b3fd8)' : 'transparent',
         color:        role === 'user' ? '#fff' : '#111111',
-        border:       role === 'ai'   ? '1px solid rgba(0,0,0,0.08)' : 'none',
+        border: 'none',
         whiteSpace:   role === 'user' ? 'pre-wrap' : 'normal',
     });
 
@@ -493,7 +493,7 @@ function typeText(element, text, speed = 6, signal = null) {
             }
 
             if (i < text.length) {
-                i++;
+                i = Math.min(i + 5, text.length);
                 element.innerHTML = marked.parse(text.slice(0, i));
                 if (!userHasScrolledUp) chatArea.scrollTop = chatArea.scrollHeight;
                 setTimeout(type, speed);
@@ -616,7 +616,7 @@ async function processAiResponse({ text, attachments = [] }) {
             return false;
         } else {
             thinkingBubble.dataset.rawText = data.reply;
-            await typeText(thinkingBubble, data.reply, 6, abortController.signal);
+            await typeText(thinkingBubble, data.reply, 1, abortController.signal);
 
             const actions = document.createElement('div');
             actions.className = 'bubble-actions';
