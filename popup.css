@@ -678,6 +678,26 @@ body {
     white-space: pre-wrap;
 }
 
+.ai-agent-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    padding-left: 14px;
+}
+
+.ai-agent-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.ai-agent-header span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #262626;
+}
+
 .hljs {
     background: none;
 }
@@ -717,6 +737,7 @@ body {
 /* Ensure AI actions remain visible */
 .message-wrapper--ai .bubble-actions {
     opacity: 1;
+    margin-left: 12px;
 }
 
 /* Disabled state for the Edit button */

@@ -307,6 +307,19 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
     const wrapper = document.createElement('div');
     wrapper.className = `message-wrapper message-wrapper--${role}`;
 
+    if (role === 'ai') {
+        const agentHeader = document.createElement('div');
+        agentHeader.className = 'ai-agent-header';
+        const agentIcon = document.createElement('img');
+        agentIcon.src = chrome.runtime.getURL('icons/icon400.png');
+        agentIcon.className = 'ai-agent-icon';
+        const agentName = document.createElement('span');
+        agentName.textContent = 'Kali Agent';
+        agentHeader.appendChild(agentIcon);
+        agentHeader.appendChild(agentName);
+        wrapper.appendChild(agentHeader);
+    }
+
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble chat-bubble--${role}`;
     bubble.dataset.rawText = rawText;
@@ -315,7 +328,7 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
 
     Object.assign(bubble.style, {
         maxWidth:     role === 'user' ? '80%' : '95%',
-        padding:      '10px 14px',
+        padding:      '10px 8px 10px 17px',
         borderRadius: role === 'user' ? '18px 18px 4px 18px' : '0',
         marginBottom: '4px',
         lineHeight:   '1.5',
