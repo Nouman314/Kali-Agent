@@ -54,6 +54,10 @@ const THINKING_PHRASES = [
 
 const DEFAULT_INPUT_HEIGHT = 100;
 
+const renderer = new marked.Renderer();
+renderer.hr = () => '';
+marked.setOptions({ renderer });
+
 // ── DOM References ───────────────────────────────────────────────
 const inputBox          = document.querySelector('.input-box');
 const inputWrapper      = document.querySelector('.input-box-wrapper');
@@ -328,7 +332,7 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
 
     Object.assign(bubble.style, {
         maxWidth:     role === 'user' ? '80%' : '95%',
-        padding:      '10px 8px 10px 17px',
+        padding:      '7px 8px 10px 17px',
         borderRadius: role === 'user' ? '18px 18px 4px 18px' : '0',
         marginBottom: '4px',
         lineHeight:   '1.5',
