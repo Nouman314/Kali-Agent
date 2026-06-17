@@ -318,22 +318,35 @@ body {
 
 /* PDF file icon - Red accent matching alert/error states */
 .attachment-icon--pdf {
-    background: #fee2e2;
-    color: #dc2626;
-}
-
-.attachment-icon--pdf i {
-    color: #dc2626;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-color: #fee2e2;
+    border-radius: 12px;
+    color: #ef4444;
 }
 
 /* Image file icon - Teal/Cyan to complement the purple design system */
 .attachment-icon--image {
-    background: #ccfbf1;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #e6fcf5;
+    border-radius: 12px;
     color: #0d9488;
 }
 
-.attachment-icon--image i {
-    color: #0d9488;
+.attachment-icon--image svg,
+.attachment-icon--pdf svg {
+    width: 18px;
+    height: 18px;
+    display: block;
 }
 
 .attachment-icon--docx {
@@ -913,7 +926,3 @@ body {
 .edit-btn-save:hover {
     background: #f3f4f6;
 }
-
-
-
-

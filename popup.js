@@ -181,10 +181,10 @@ function createAttachmentChip(entry, variant = 'composer') {
         const icon = document.createElement('div');
         icon.className = 'attachment-icon';
         if (entry.kind === 'pdf') {
-            icon.innerHTML = '<i class="ti ti-file-type-pdf" aria-hidden="true"></i>';
+            icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6" /><path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z" /><path d="M17 18h2" /><path d="M20 15h-3v6" /></svg>';
             icon.classList.add('attachment-icon--pdf');
         } else if (entry.kind === 'image') {
-            icon.innerHTML = '<i class="ti ti-photo" aria-hidden="true"></i>';
+            icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" ry="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/><path d="M11 11l4 4"/></svg>';
             icon.classList.add('attachment-icon--image');
         } else if (entry.kind === 'docx') {
             icon.innerHTML = '<i class="ti ti-file-type-doc" aria-hidden="true"></i>';
