@@ -4,16 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' http://localhost:*">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' http://localhost:*">
     <title>Document</title>
     <link rel="stylesheet" href="popup.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <link rel="stylesheet" href="github.min.css">
     <script src="marked.min.js"></script>
     <script src="highlight.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -75,7 +71,7 @@
                             <button class="model-selector" id="modelSelectBtn">
                                 <div class="model-dot"></div>
                                 <span id="selectedModelText">Gemini 3.1 Flash-Lite</span>
-                                <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:13px;"></i>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="font-size:13px; width: 14px; height: 14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </button>
                             <div class="model-dropdown" id="modelDropdown"
                                 style="display: none; position: absolute; bottom: 100%; left: 0; margin-bottom: 8px; background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 6px; z-index: 100; min-width: 190px; font-family: 'Inter', sans-serif;">
