@@ -108,6 +108,12 @@ body {
     transform: none;
 }
 
+.icon-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+}
+
 .icon-btn:hover::after {
     opacity: 1;
 }
@@ -178,6 +184,12 @@ body {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s;
+}
+
+.bubble-actions button svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
 }
 
 .bubble-actions button:hover::before {
@@ -841,3 +853,5 @@ body {
 .edit-btn-save:hover {
     background: #f3f4f6;
 }
+
+

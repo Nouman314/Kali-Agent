@@ -332,7 +332,7 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
 
     Object.assign(bubble.style, {
         maxWidth:     role === 'user' ? '80%' : '95%',
-        padding:      '7px 8px 10px 17px',
+        padding:      role === 'user' ? '7px 8px 10px 10px' : '7px 8px 10px 17px',
         borderRadius: role === 'user' ? '18px 18px 4px 18px' : '0',
         marginBottom: '4px',
         lineHeight:   '1.5',
@@ -364,21 +364,54 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
         actions.className = 'bubble-actions';
 
         actions.innerHTML = role === 'user'
-            ? `<button title="Edit"><i class="ti ti-edit"></i></button>
-               <button title="Copy"><i class="ti ti-copy"></i></button>`
-            : `<button title="Copy"><i class="ti ti-copy"></i></button>
-               <button title="Like"><i class="ti ti-thumb-up"></i></button>
-               <button title="Dislike"><i class="ti ti-thumb-down"></i></button>
-               <button title="Retry"><i class="ti ti-refresh"></i></button>`;
+            ? `<button title="Edit" aria-label="Edit">
+                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                       <path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />
+                       <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" />
+                       <path d="M16 5l3 3" />
+                   </svg>
+               </button>
+               <button title="Copy" aria-label="Copy">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                       <rect x="9" y="9" width="13" height="13" rx="2.5" ry="2.5"></rect>
+                       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                   </svg>
+               </button>`
+            : `<button title="Copy" aria-label="Copy">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                       <rect x="9" y="9" width="13" height="13" rx="2.5" ry="2.5"></rect>
+                       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                   </svg>
+               </button>
+               <button title="Like" aria-label="Like">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                       <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                   </svg>
+               </button>
+               <button title="Dislike" aria-label="Dislike">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                       <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+                   </svg>
+               </button>
+               <button title="Retry" aria-label="Retry">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                       <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                       <path d="M21 3v5h-5"></path>
+                       <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+                       <path d="M3 21v-5h5"></path>
+                   </svg>
+               </button>`;
 
         actions.querySelector('[title="Copy"]').addEventListener('click', (e) => {
             navigator.clipboard.writeText(bubble.dataset.rawText || text);
             const btn = e.currentTarget;
-            btn.querySelector('i').className = 'ti ti-check';
-            btn.style.color = '#22c55e';
+            const svg = btn.querySelector('svg');
+            const originalHTML = svg.innerHTML;
+            svg.innerHTML = '<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>';
+            svg.style.stroke = '#22c55e';
             setTimeout(() => {
-                btn.querySelector('i').className = 'ti ti-copy';
-                btn.style.color = '';
+                svg.innerHTML = originalHTML;
+                svg.style.stroke = '';
             }, 1500);
         });
 
@@ -471,9 +504,9 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
             });
 
             actions.querySelector('[title="Retry"]').addEventListener('click', (e) => {
-                const icon = e.currentTarget.querySelector('i');
-                icon.classList.add('spin-once');
-                icon.addEventListener('animationend', () => icon.classList.remove('spin-once'), { once: true });
+                const svg = e.currentTarget.querySelector('svg');
+                svg.classList.add('spin-once');
+                svg.addEventListener('animationend', () => svg.classList.remove('spin-once'), { once: true });
 
                 const userBubbles    = chatArea.querySelectorAll('.chat-bubble--user');
                 const lastUserBubble = userBubbles[userBubbles.length - 1];
@@ -638,19 +671,41 @@ async function processAiResponse({ text, attachments = [] }) {
             const actions = document.createElement('div');
             actions.className = 'bubble-actions';
             actions.innerHTML = `
-                <button title="Copy"><i class="ti ti-copy"></i></button>
-                <button title="Like"><i class="ti ti-thumb-up"></i></button>
-                <button title="Dislike"><i class="ti ti-thumb-down"></i></button>
-                <button title="Retry"><i class="ti ti-refresh"></i></button>`;
+                <button title="Copy" aria-label="Copy">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="9" y="9" width="13" height="13" rx="2.5" ry="2.5"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
+                <button title="Like" aria-label="Like">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                    </svg>
+                </button>
+                <button title="Dislike" aria-label="Dislike">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+                    </svg>
+                </button>
+                <button title="Retry" aria-label="Retry">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                        <path d="M21 3v5h-5"></path>
+                        <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+                        <path d="M3 21v-5h5"></path>
+                    </svg>
+                </button>`;
 
             actions.querySelector('[title="Copy"]').addEventListener('click', (e) => {
                 navigator.clipboard.writeText(thinkingBubble.dataset.rawText || thinkingBubble.textContent);
                 const btn = e.currentTarget;
-                btn.querySelector('i').className = 'ti ti-check';
-                btn.style.color = '#22c55e';
+                const svg = btn.querySelector('svg');
+                const originalHTML = svg.innerHTML;
+                svg.innerHTML = '<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>';
+                svg.style.stroke = '#22c55e';
                 setTimeout(() => {
-                    btn.querySelector('i').className = 'ti ti-copy';
-                    btn.style.color = '';
+                    svg.innerHTML = originalHTML;
+                    svg.style.stroke = '';
                 }, 1500);
             });
 
@@ -669,9 +724,9 @@ async function processAiResponse({ text, attachments = [] }) {
             });
 
             actions.querySelector('[title="Retry"]').addEventListener('click', (e) => {
-                const icon = e.currentTarget.querySelector('i');
-                icon.classList.add('spin-once');
-                icon.addEventListener('animationend', () => icon.classList.remove('spin-once'), { once: true });
+                const svg = e.currentTarget.querySelector('svg');
+                svg.classList.add('spin-once');
+                svg.addEventListener('animationend', () => svg.classList.remove('spin-once'), { once: true });
 
                 const userBubbles    = chatArea.querySelectorAll('.chat-bubble--user');
                 const lastUserBubble = userBubbles[userBubbles.length - 1];
@@ -823,3 +878,4 @@ modelOptions.forEach(option => option.addEventListener('click', () => handleMode
 
 resetComposerHeight();
 renderEmptyState();
+

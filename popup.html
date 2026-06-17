@@ -26,12 +26,36 @@
                     <span class="header-title">New Chat</span>
                 </div>
                 <div class="header-actions">
-                    <button class="icon-btn" aria-label="New chat" data-tooltip="New chat"><i class="ti ti-edit"
-                            aria-hidden="true"></i></button>
-                    <button class="icon-btn" aria-label="Export" data-tooltip="Export"><i class="ti ti-external-link"
-                            aria-hidden="true"></i></button>
-                    <button class="icon-btn" aria-label="Toggle sidebar" data-tooltip="Hide sidebar" data-tooltip-side="bottom-left"><i class="ti ti-layout-sidebar-left-collapse"
-                            aria-hidden="true"></i></button>
+                    <!-- 1. New Chat (Square Pen) -->
+                    <button class="icon-btn" aria-label="New chat" data-tooltip="New chat">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />
+                            <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" />
+                            <path d="M16 5l3 3" />
+                        </svg>
+                    </button>
+
+                    <!-- 2. Export (External Link) -->
+                    <button class="icon-btn" aria-label="Export" data-tooltip="Export">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
+                            <path d="M11 13l9 -9" stroke-linecap="round" />
+                            <path d="M15 4h5v5" />
+                        </svg>
+                    </button>
+
+                    <!-- 3. Toggle Sidebar (Left Sidebar Collapse) -->
+                    <button class="icon-btn" aria-label="Toggle sidebar" data-tooltip="Hide sidebar"
+                        data-tooltip-side="bottom-left">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="4" y="4" width="16" height="16" rx="2" />
+                            <path d="M9 4v16" />
+                            <path d="M14 10l-2 2l2 2" />
+                        </svg>
+                    </button>
                 </div>
             </div>
 
@@ -52,16 +76,20 @@
                                 <span id="selectedModelText">Gemini 3.1 Flash-Lite</span>
                                 <i class="ti ti-chevron-down" aria-hidden="true" style="font-size:13px;"></i>
                             </button>
-                            <div class="model-dropdown" id="modelDropdown" style="display: none; position: absolute; bottom: 100%; left: 0; margin-bottom: 8px; background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 6px; z-index: 100; min-width: 190px; font-family: 'Inter', sans-serif;">
-                                  <div class="model-option" data-model="gemini-2.5-flash" style="padding: 10px 12px; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: #111;">
-                                      <div class="model-dot" style="background: #4b3fd8;"></div>Gemini 2.5 Flash
-                                  </div>
-                                  <div class="model-option" data-model="gemini-3.1-flash-lite" style="padding: 10px 12px; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: #111;">
-                                      <div class="model-dot" style="background: #8b5cf6;"></div>Gemini 3.1 Flash-Lite
-                                  </div>
-                                  <div class="model-option" data-model="gemini-2.5-flash-lite" style="padding: 10px 12px; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: #111;">
-                                      <div class="model-dot" style="background: #10b981;"></div>Gemini 2.5 Flash-Lite
-                                  </div>
+                            <div class="model-dropdown" id="modelDropdown"
+                                style="display: none; position: absolute; bottom: 100%; left: 0; margin-bottom: 8px; background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 6px; z-index: 100; min-width: 190px; font-family: 'Inter', sans-serif;">
+                                <div class="model-option" data-model="gemini-2.5-flash"
+                                    style="padding: 10px 12px; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: #111;">
+                                    <div class="model-dot" style="background: #4b3fd8;"></div>Gemini 2.5 Flash
+                                </div>
+                                <div class="model-option" data-model="gemini-3.1-flash-lite"
+                                    style="padding: 10px 12px; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: #111;">
+                                    <div class="model-dot" style="background: #8b5cf6;"></div>Gemini 3.1 Flash-Lite
+                                </div>
+                                <div class="model-option" data-model="gemini-2.5-flash-lite"
+                                    style="padding: 10px 12px; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: #111;">
+                                    <div class="model-dot" style="background: #10b981;"></div>Gemini 2.5 Flash-Lite
+                                </div>
                             </div>
                         </div>
                         <div class="input-right">
@@ -153,11 +181,13 @@
                 </circle>
 
                 <circle cx="64" cy="64" r="36" fill="url(#sider-base)">
-                    <animateTransform attributeName="transform" type="rotate" from="0 64 64" to="360 64 64" dur="10s" repeatCount="indefinite" />
+                    <animateTransform attributeName="transform" type="rotate" from="0 64 64" to="360 64 64" dur="10s"
+                        repeatCount="indefinite" />
                 </circle>
 
                 <circle cx="64" cy="64" r="36" fill="url(#sider-bounce)">
-                    <animateTransform attributeName="transform" type="rotate" from="360 64 64" to="0 64 64" dur="14s" repeatCount="indefinite" />
+                    <animateTransform attributeName="transform" type="rotate" from="360 64 64" to="0 64 64" dur="14s"
+                        repeatCount="indefinite" />
                 </circle>
 
                 <circle cx="64" cy="64" r="36" fill="url(#sider-specular)"></circle>
