@@ -72,6 +72,26 @@ const modelDropdown = document.getElementById('modelDropdown');
 const selectedModelText = document.getElementById('selectedModelText');
 const modelOptions = document.querySelectorAll('.model-option');
 const sidebarShell = document.querySelector('.sidebar-shell');
+const sendBtn = document.querySelector('.send-btn');
+const sendBtnIcon = sendBtn?.querySelector('.send-btn-icon');
+
+function setSendButtonState(isStopping) {
+    if (!sendBtn || !sendBtnIcon) return;
+
+    if (isStopping) {
+        sendBtn.setAttribute('aria-label', 'Stop');
+        sendBtn.setAttribute('data-tooltip', 'Stop');
+        sendBtnIcon.style.transform = 'scale(1.12)';
+        sendBtnIcon.style.transformOrigin = 'center';
+        sendBtnIcon.innerHTML = '<rect x="5" y="5" width="14" height="14" rx="3.5" ry="3.5" fill="currentColor" stroke="none" />';
+    } else {
+        sendBtn.setAttribute('aria-label', 'Send');
+        sendBtn.setAttribute('data-tooltip', 'Send');
+        sendBtnIcon.style.transform = '';
+        sendBtnIcon.style.transformOrigin = '';
+        sendBtnIcon.innerHTML = '<line x1="12" y1="19" x2="12" y2="5" /><polyline points="5 12 12 5 19 12" />';
+    }
+}
 
 chatArea.addEventListener('scroll', () => {
     const distanceFromBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight;
@@ -604,8 +624,7 @@ async function processAiResponse({ text, attachments = [] }) {
     isAiResponding = true;
     abortController = new AbortController();
 
-    const sendBtnIcon = document.querySelector('.send-btn i');
-    if (sendBtnIcon) sendBtnIcon.className = 'ti ti-square-filled';
+    setSendButtonState(true);
 
     document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
         btn.classList.add('disabled');
@@ -757,7 +776,7 @@ async function processAiResponse({ text, attachments = [] }) {
         return false;
     } finally {
         isAiResponding = false;
-        if (sendBtnIcon) sendBtnIcon.className = 'ti ti-arrow-up';
+        setSendButtonState(false);
         document.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach(btn => {
             btn.classList.remove('disabled');
         });
@@ -880,7 +899,7 @@ document.addEventListener('mousemove', function (e) {
 
 document.addEventListener('mouseup', () => { isResizing = false; });
 
-document.querySelector('.send-btn').addEventListener('click', () => {
+sendBtn?.addEventListener('click', () => {
     if (isAiResponding) {
         if (abortController) abortController.abort(); // Stop generating
     } else {
