@@ -342,30 +342,37 @@ body {
     color: #0d9488;
 }
 
+.attachment-icon--docx {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-color: #eef2fe;
+    border-radius: 12px;
+    color: #4f46e5;
+}
+
+.attachment-icon--ppt {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-color: #fff2e6;
+    border-radius: 12px;
+    color: #ea580c;
+}
+
 .attachment-icon--image svg,
-.attachment-icon--pdf svg {
+.attachment-icon--pdf svg,
+.attachment-icon--docx svg,
+.attachment-icon--ppt svg {
     width: 18px;
     height: 18px;
     display: block;
-}
-
-.attachment-icon--docx {
-    background: #eef2ff;
-    color: #6366f1;
-}
-
-.attachment-icon--docx i {
-    color: #6366f1;
-}
-
-/* Other file types - Indigo to match primary accent */
-.attachment-icon--ppt {
-    background: #fff4e5;
-    color: #df7a00;
-}
-
-.attachment-icon--ppt i {
-    color: #f8a202;
 }
 
 .attachment-meta {
