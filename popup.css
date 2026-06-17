@@ -584,6 +584,16 @@ body {
     color: #4B3FD8;
 }
 
+.nav-item.active svg {
+    color: #4B3FD8;
+}
+
+.nav-item svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+}
+
 .nav-label {
     font-size: 10px;
     color: #6b7280;
@@ -853,5 +863,7 @@ body {
 .edit-btn-save:hover {
     background: #f3f4f6;
 }
+
+
 
 

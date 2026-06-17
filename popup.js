@@ -41,8 +41,8 @@
 
 // ── Constants ────────────────────────────────────────────────────
 const BACKEND_URL = 'http://localhost:5000/chat';
-const RESET_URL    = 'http://localhost:5000/reset';
-let currentModel  = 'gemini-3.1-flash-lite';
+const RESET_URL = 'http://localhost:5000/reset';
+let currentModel = 'gemini-3.1-flash-lite';
 let isAiResponding = false;
 let abortController = null;
 let userHasScrolledUp = false;
@@ -59,19 +59,19 @@ renderer.hr = () => '';
 marked.setOptions({ renderer });
 
 // ── DOM References ───────────────────────────────────────────────
-const inputBox          = document.querySelector('.input-box');
-const inputWrapper      = document.querySelector('.input-box-wrapper');
-const attachmentInput   = document.getElementById('attachmentInput');
-const attachmentTray    = document.getElementById('attachmentTray');
-const attachmentError   = document.getElementById('attachmentError');
-const chatArea          = document.querySelector('.chat-area');
+const inputBox = document.querySelector('.input-box');
+const inputWrapper = document.querySelector('.input-box-wrapper');
+const attachmentInput = document.getElementById('attachmentInput');
+const attachmentTray = document.getElementById('attachmentTray');
+const attachmentError = document.getElementById('attachmentError');
+const chatArea = document.querySelector('.chat-area');
 const emptyStateTemplate = document.getElementById('emptyStateTemplate');
-const EMPTY_STATE_HTML   = emptyStateTemplate ? emptyStateTemplate.innerHTML.trim() : '';
-const modelSelectBtn    = document.getElementById('modelSelectBtn');
-const modelDropdown     = document.getElementById('modelDropdown');
+const EMPTY_STATE_HTML = emptyStateTemplate ? emptyStateTemplate.innerHTML.trim() : '';
+const modelSelectBtn = document.getElementById('modelSelectBtn');
+const modelDropdown = document.getElementById('modelDropdown');
 const selectedModelText = document.getElementById('selectedModelText');
-const modelOptions      = document.querySelectorAll('.model-option');
-const sidebarShell      = document.querySelector('.sidebar-shell');
+const modelOptions = document.querySelectorAll('.model-option');
+const sidebarShell = document.querySelector('.sidebar-shell');
 
 chatArea.addEventListener('scroll', () => {
     const distanceFromBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight;
@@ -79,8 +79,8 @@ chatArea.addEventListener('scroll', () => {
 });
 
 // ── Resize State ─────────────────────────────────────────────────
-let isResizing  = false;
-let startY      = 0;
+let isResizing = false;
+let startY = 0;
 let startHeight = 0;
 
 let attachedFiles = [];
@@ -331,17 +331,17 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
     bubble.innerHTML = role === 'ai' ? marked.parse(text) : text;
 
     Object.assign(bubble.style, {
-        maxWidth:     role === 'user' ? '80%' : '95%',
-        padding:      role === 'user' ? '7px 8px 10px 10px' : '7px 8px 10px 17px',
+        maxWidth: role === 'user' ? '80%' : '95%',
+        padding: role === 'user' ? '7px 8px 10px 10px' : '7px 8px 10px 17px',
         borderRadius: role === 'user' ? '18px 18px 4px 18px' : '0',
         marginBottom: '4px',
-        lineHeight:   '1.5',
-        fontSize:     '14px',
-        wordBreak:    'break-word',
-        background:   role === 'user' ? 'linear-gradient(135deg, #6073ea, #4b3fd8)' : 'transparent',
-        color:        role === 'user' ? '#fff' : '#111111',
+        lineHeight: '1.5',
+        fontSize: '14px',
+        wordBreak: 'break-word',
+        background: role === 'user' ? 'linear-gradient(135deg, #6073ea, #4b3fd8)' : 'transparent',
+        color: role === 'user' ? '#fff' : '#111111',
         border: 'none',
-        whiteSpace:   role === 'user' ? 'pre-wrap' : 'normal',
+        whiteSpace: role === 'user' ? 'pre-wrap' : 'normal',
     });
 
     if (role === 'user') {
@@ -417,12 +417,12 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
 
         if (role === 'user') {
             const editBtn = actions.querySelector('[title="Edit"]');
-            
+
             if (isAiResponding) editBtn.classList.add('disabled');
 
             editBtn.addEventListener('click', () => {
                 if (isAiResponding) return;
-                
+
                 actions.style.display = 'none';
                 const currentText = bubble.dataset.rawText || bubble.textContent;
                 const bubbleWidth = Math.max(280, Math.ceil(bubble.getBoundingClientRect().width));
@@ -448,7 +448,7 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
                 textarea.value = currentText;
                 textarea.focus();
                 textarea.style.height = textarea.scrollHeight + 'px';
-                
+
                 textarea.addEventListener('input', () => {
                     textarea.style.height = 'auto';
                     textarea.style.height = textarea.scrollHeight + 'px';
@@ -508,9 +508,9 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
                 svg.classList.add('spin-once');
                 svg.addEventListener('animationend', () => svg.classList.remove('spin-once'), { once: true });
 
-                const userBubbles    = chatArea.querySelectorAll('.chat-bubble--user');
+                const userBubbles = chatArea.querySelectorAll('.chat-bubble--user');
                 const lastUserBubble = userBubbles[userBubbles.length - 1];
-                const lastUserText   = lastUserBubble?.dataset.rawText || lastUserBubble?.textContent;
+                const lastUserText = lastUserBubble?.dataset.rawText || lastUserBubble?.textContent;
 
                 if (lastUserText) {
                     thinkingBubble.parentNode.remove();
@@ -565,14 +565,14 @@ function updateResizeCursor(e) {
     const isTopEdge = e.clientY - inputWrapper.getBoundingClientRect().top < 8;
     const cursor = isTopEdge ? 'ns-resize' : 'text';
     inputWrapper.style.cursor = cursor;
-    inputBox.style.cursor     = cursor;
+    inputBox.style.cursor = cursor;
 }
 
 function tryStartResize(e) {
     const isTopEdge = e.clientY - inputWrapper.getBoundingClientRect().top < 8;
     if (isTopEdge) {
-        isResizing  = true;
-        startY      = e.clientY;
+        isResizing = true;
+        startY = e.clientY;
         startHeight = inputBox.getBoundingClientRect().height;
         e.preventDefault();
     }
@@ -619,7 +619,7 @@ async function processAiResponse({ text, attachments = [] }) {
         const wrapper = document.createElement('span');
         wrapper.className = 'phrase-wrapper';
         const shimmer = document.createElement('span');
-        shimmer.className   = 'shimmer-text';
+        shimmer.className = 'shimmer-text';
         shimmer.textContent = THINKING_PHRASES[phraseIndex];
         wrapper.appendChild(shimmer);
         thinkingBubble.appendChild(wrapper);
@@ -650,10 +650,10 @@ async function processAiResponse({ text, attachments = [] }) {
             });
         } else {
             response = await fetch(BACKEND_URL, {
-                method:  'POST',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ message: text, model: currentModel }),
-                signal:  abortController.signal
+                body: JSON.stringify({ message: text, model: currentModel }),
+                signal: abortController.signal
             });
         }
 
@@ -728,9 +728,9 @@ async function processAiResponse({ text, attachments = [] }) {
                 svg.classList.add('spin-once');
                 svg.addEventListener('animationend', () => svg.classList.remove('spin-once'), { once: true });
 
-                const userBubbles    = chatArea.querySelectorAll('.chat-bubble--user');
+                const userBubbles = chatArea.querySelectorAll('.chat-bubble--user');
                 const lastUserBubble = userBubbles[userBubbles.length - 1];
-                const lastUserText   = lastUserBubble?.dataset.rawText || lastUserBubble?.textContent;
+                const lastUserText = lastUserBubble?.dataset.rawText || lastUserBubble?.textContent;
 
                 if (lastUserText) {
                     thinkingBubble.parentNode.remove();
@@ -747,7 +747,7 @@ async function processAiResponse({ text, attachments = [] }) {
         }
     } catch (err) {
         clearInterval(thinkingInterval);
-        thinkingBubble.innerHTML   = '';
+        thinkingBubble.innerHTML = '';
         if (err.name === 'AbortError') {
             thinkingBubble.textContent = '⚠️ Generation stopped.';
         } else {
@@ -765,11 +765,11 @@ async function processAiResponse({ text, attachments = [] }) {
 }
 
 function handleModelSelect(option) {
-    currentModel                  = option.getAttribute('data-model');
+    currentModel = option.getAttribute('data-model');
     selectedModelText.textContent = option.textContent.trim();
-    modelDropdown.style.display   = 'none';
+    modelDropdown.style.display = 'none';
 
-    const mainDot   = modelSelectBtn.querySelector('.model-dot');
+    const mainDot = modelSelectBtn.querySelector('.model-dot');
     const optionDot = option.querySelector('.model-dot');
     if (mainDot && optionDot) mainDot.style.background = optionDot.style.background;
 }
@@ -811,10 +811,10 @@ try {
         inputBox.value = '';
         resetComposerHeight();
         clearAttachments();
-        fetch(RESET_URL, { method: 'POST' }).catch(() => {});
+        fetch(RESET_URL, { method: 'POST' }).catch(() => { });
         isAiResponding = false;
     });
-} catch(e) {}
+} catch (e) { }
 
 try {
     document.querySelector('.header-actions .icon-btn[aria-label="Export"]').addEventListener('click', () => {
@@ -830,7 +830,7 @@ try {
         a.click();
         URL.revokeObjectURL(url);
     });
-} catch(e) {}
+} catch (e) { }
 
 try {
     const sidebarToggleBtn = document.querySelector('.header-actions .icon-btn[aria-label="Toggle sidebar"]');
@@ -839,13 +839,38 @@ try {
         sidebarToggleBtn.setAttribute('aria-pressed', String(isCollapsed));
         sidebarToggleBtn.setAttribute('data-tooltip', isCollapsed ? 'Show sidebar' : 'Hide sidebar');
     });
-} catch(e) {}
+} catch (e) { }
+
+// ── Navigation Items Event Listeners ─────────────────────────────
+function setActive(element) {
+    // Remove active class from all nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    // Add active class to clicked element
+    element.classList.add('active');
+}
+
+const navItems = document.querySelectorAll('.nav-item[data-nav-item]');
+navItems.forEach(item => {
+    item.addEventListener('click', function() {
+        setActive(this);
+    });
+    
+    // Support keyboard navigation
+    item.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setActive(this);
+        }
+    });
+});
 
 inputWrapper.addEventListener('mousemove', updateResizeCursor);
-inputBox.addEventListener('mousemove',     updateResizeCursor);
+inputBox.addEventListener('mousemove', updateResizeCursor);
 
 inputWrapper.addEventListener('mousedown', tryStartResize);
-inputBox.addEventListener('mousedown',     tryStartResize);
+inputBox.addEventListener('mousedown', tryStartResize);
 
 document.addEventListener('mousemove', function (e) {
     if (!isResizing) return;
@@ -878,4 +903,3 @@ modelOptions.forEach(option => option.addEventListener('click', () => handleMode
 
 resetComposerHeight();
 renderEmptyState();
-

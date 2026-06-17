@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' http://localhost:*">
     <title>Document</title>
     <link rel="stylesheet" href="popup.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
@@ -102,42 +103,86 @@
                 </div>
             </div>
         </div>
-
         <div class="right-nav">
-            <div class="nav-item active" role="button" tabindex="0">
-                <i class="ti ti-message-circle" aria-hidden="true"></i>
+            <!-- 1. Chat (Active) -->
+            <div class="nav-item active" role="button" tabindex="0" data-nav-item="chat">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 3a9 9 0 0 1 9 9a9 9 0 0 1-9 9a9 9 0 0 1-2.5-.35L4 21l1.35-5.5A9 9 0 0 1 12 3z" />
+                </svg>
                 <span class="nav-label">Chat</span>
             </div>
-            <div class="nav-item" role="button" tabindex="0">
-                <i class="ti ti-compass" aria-hidden="true"></i>
+
+            <!-- 2. Discover -->
+            <div class="nav-item" role="button" tabindex="0" data-nav-item="discover">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M10 14l4-4" />
+                    <path d="M14 10l-2.5 5.5L10 14l5.5-2.5z" />
+                </svg>
                 <span class="nav-label">Discover</span>
             </div>
-            <div class="nav-item" role="button" tabindex="0">
-                <i class="ti ti-robot" aria-hidden="true"></i>
+
+            <!-- 3. Agents -->
+            <div class="nav-item" role="button" tabindex="0" data-nav-item="agents">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 2v4" />
+                    <path d="M9 4h6" />
+                    <rect x="5" y="8" width="14" height="10" rx="2" />
+                    <path d="M9 13h.01M15 13h.01" />
+                    <path d="M8 18v2M16 18v2" />
+                    <path d="M5 13H3M19 13h2" />
+                </svg>
                 <span class="nav-label">Agents</span>
             </div>
-            <div class="nav-item" role="button" tabindex="0">
-                <i class="ti ti-brain" aria-hidden="true"></i>
+
+            <!-- 4. Knowledge -->
+            <div class="nav-item" role="button" tabindex="0" data-nav-item="knowledge">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
+                    <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
+                    <path d="M12 5v14" />
+                </svg>
                 <span class="nav-label">Knowledge</span>
             </div>
-            <div class="nav-item" role="button" tabindex="0">
-                <i class="ti ti-template" aria-hidden="true"></i>
+
+            <!-- 5. Templates -->
+            <div class="nav-item" role="button" tabindex="0" data-nav-item="templates">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="4" y="4" width="16" height="4" rx="1" />
+                    <rect x="4" y="12" width="6" height="8" rx="1" />
+                    <line x1="14" y1="12" x2="20" y2="12" />
+                    <line x1="14" y1="16" x2="20" y2="16" />
+                    <line x1="14" y1="20" x2="20" y2="20" />
+                </svg>
                 <span class="nav-label">Templates</span>
             </div>
-            <div class="nav-item" role="button" tabindex="0">
-                <i class="ti ti-activity" aria-hidden="true"></i>
+
+            <!-- 6. Activity -->
+            <div class="nav-item" role="button" tabindex="0" data-nav-item="activity">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 12h4.5l1.5-6l3 12l1.5-6h4.5" />
+                </svg>
                 <span class="nav-label">Activity</span>
             </div>
-            <div class="nav-item" role="button" tabindex="0">
-                <i class="ti ti-settings" aria-hidden="true"></i>
+
+            <!-- 7. Settings -->
+            <div class="nav-item" role="button" tabindex="0" data-nav-item="settings">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
                 <span class="nav-label">Settings</span>
             </div>
 
             <div class="nav-spacer"></div>
             <div class="nav-divider"></div>
 
-            <div class="nav-item" role="button" tabindex="0">
-                <i class="ti ti-help-circle" aria-hidden="true"></i>
+            <div class="nav-item" role="button" tabindex="0" data-nav-item="help">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
                 <span class="nav-label">Help</span>
             </div>
 
