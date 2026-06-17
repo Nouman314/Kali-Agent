@@ -348,7 +348,7 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
     bubble.className = `chat-bubble chat-bubble--${role}`;
     bubble.dataset.rawText = rawText;
     bubble._attachments = attachments;
-    bubble.innerHTML = role === 'ai' ? marked.parse(text) : text;
+    bubble.innerHTML = role === 'ai' ? marked.parse(text) : '';
 
     Object.assign(bubble.style, {
         maxWidth: role === 'user' ? '80%' : '95%',
@@ -361,11 +361,36 @@ function appendBubble(text, role, showActions = true, displayText = text, rawTex
         background: role === 'user' ? 'linear-gradient(135deg, #6073ea, #4b3fd8)' : 'transparent',
         color: role === 'user' ? '#fff' : '#111111',
         border: 'none',
-        whiteSpace: role === 'user' ? 'pre-wrap' : 'normal',
     });
 
     if (role === 'user') {
-        bubble.textContent = displayText;
+        const textSpan = document.createElement('span');
+        textSpan.className = 'user-bubble-text';
+        textSpan.textContent = displayText;
+        bubble.appendChild(textSpan);
+
+        requestAnimationFrame(() => {
+            const COLLAPSE_LIMIT = 168;
+            if (textSpan.scrollHeight > COLLAPSE_LIMIT) {
+                bubble.classList.add('has-show-more');
+                textSpan.classList.add('is-collapsed');
+
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'show-more-btn';
+                toggleBtn.innerHTML = `<span>Show more</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>`;
+
+                toggleBtn.addEventListener('click', () => {
+                    const collapsed = textSpan.classList.toggle('is-collapsed');
+                    toggleBtn.classList.toggle('is-expanded', !collapsed);
+                    toggleBtn.querySelector('span').textContent = collapsed ? 'Show more' : 'Show less';
+                });
+
+                bubble.appendChild(toggleBtn);
+            }
+        });
     }
 
     wrapper.appendChild(bubble);

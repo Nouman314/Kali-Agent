@@ -696,8 +696,58 @@ body {
     font-size: 13px;
 }
 
-.chat-bubble {
+.chat-bubble--user {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-bubble-text {
     white-space: pre-wrap;
+}
+
+.user-bubble-text.is-collapsed {
+    max-height: 168px;
+    overflow: hidden;
+    position: relative;
+}
+
+.has-show-more .user-bubble-text.is-collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 36px;
+    background: linear-gradient(to bottom, rgba(75, 63, 216, 0), #4b3fd8);
+    pointer-events: none;
+}
+
+.show-more-btn {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    padding-top: 4px;
+    border: none;
+    background: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    width: 100%;
+    opacity: 1;
+}
+
+.show-more-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: #ffffff;
+    transition: transform 0.2s ease;
+}
+
+.show-more-btn.is-expanded svg {
+    transform: rotate(180deg);
 }
 
 .ai-agent-header {
