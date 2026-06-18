@@ -210,6 +210,63 @@ body {
     animation: spinOnce 0.4s ease-out;
 }
 
+@keyframes bubbleFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chat-bubble {
+    animation: bubbleFadeIn 0.25s ease-out forwards;
+}
+
+@keyframes textShimmer {
+    0% {
+        background-position: 100% center;
+    }
+
+    100% {
+        background-position: -100% center;
+    }
+}
+
+.shimmer-text {
+    display: inline;
+    background: linear-gradient(90deg, #52525b 0%, #52525b 20%, #f4f4f5 45%, #09090b 50%, #f4f4f5 55%, #52525b 80%, #52525b 100%);
+    background-size: 400% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: textShimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes phraseSlideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.phrase-wrapper {
+    display: inline-block;
+    animation: phraseSlideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.model-option:hover {
+    background: #f3f4f6;
+}
+
 .empty-state {
     flex: 1;
     display: flex;

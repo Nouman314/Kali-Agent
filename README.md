@@ -17,7 +17,7 @@ Features
 * Integration with Google Gemini models
 * Multi-turn conversation support
 * Model selection for different Gemini variants
-* Message actions include retry, copy, edit, and feedback.
+* Message actions include retry, copy, edit, Like/Dislike feedback, and auto-collapsing "Show more" for long user messages.
 * Attach PDFs, DOCX, PPTX, and common image files from the composer
 * Local Flask backend with CORS support
 
@@ -30,13 +30,25 @@ Project Structure
 ├── manifest.json
 ├── popup.html
 ├── popup.css
-├── popup.js
 ├── server.py
 ├── requirements.txt
 ├── icons/
 │   ├── icon16.png
 │   ├── icon48.png
 │   ├── icon128.png
+│   └── icon400.png
+├── js/
+│   ├── main.js
+│   ├── config.js
+│   ├── state.js
+│   ├── dom.js
+│   ├── services/
+│   │   └── chatApi.js
+│   └── features/
+│       ├── attachments.js
+│       ├── composer.js
+│       ├── messages.js
+│       └── navigation.js
 └── README.md
 
 ---
@@ -169,6 +181,7 @@ Notes
 * The backend server must be running for the extension to function correctly.
 * Conversation history is stored in memory and resets when the server restarts.
 * If the backend is unavailable, the extension will not return responses.
+* `popup.html` uses a strict `script-src 'self'` CSP, so `marked.min.js`, `highlight.min.js`, and the popup modules must remain local files rather than CDN links.
 
 ---
 
