@@ -116,47 +116,63 @@
                 </div>
             </div>
 
-            <div class="discover-view" id="discoverView" hidden>
-                <div class="discover-shell">
-                    <div class="discover-hero">
+            <div class="grammar-view" id="grammarView" hidden>
+                <div class="grammar-shell">
+                    <div class="grammar-hero">
                         <div>
-                            <div class="discover-kicker">Prompt Library</div>
-                            <h2>Discover</h2>
-                            <p class="discover-subtitle">Jump-start a conversation with a ready-made prompt.</p>
-                        </div>
-                        <div class="discover-hero-meta">
-                            <span class="discover-count" id="discoverCount">0 prompts</span>
-                            <button class="discover-shuffle" id="discoverShuffleBtn" type="button">Shuffle</button>
+                            <div class="grammar-kicker">Grammar Assistant</div>
+                            <h2>Grammar Fix</h2>
+                            <p class="grammar-subtitle">Paste your text below and get instant grammar, spelling, and punctuation corrections.</p>
                         </div>
                     </div>
 
-                    <div class="discover-controls">
-                        <label class="discover-search" for="discoverSearch">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <path d="m21 21-4.3-4.3"></path>
-                            </svg>
-                            <input id="discoverSearch" type="search" placeholder="Search prompts..." autocomplete="off">
-                        </label>
-
-                        <div class="discover-filters" aria-label="Prompt filters">
-                            <button class="discover-filter is-active" type="button" data-filter="all">All</button>
-                            <button class="discover-filter" type="button" data-filter="work">Work</button>
-                            <button class="discover-filter" type="button" data-filter="writing">Writing</button>
-                            <button class="discover-filter" type="button" data-filter="code">Code</button>
-                            <button class="discover-filter" type="button" data-filter="ideas">Ideas</button>
+                    <div class="grammar-input-card">
+                        <textarea id="grammarInput" class="grammar-textarea" placeholder="Paste or type your text here..." spellcheck="false"></textarea>
+                        <div class="grammar-input-footer">
+                            <span class="grammar-counter" id="grammarCounter">0 words · 0 characters</span>
+                            <button class="grammar-fix-btn" id="grammarFixBtn" type="button">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 3v3" />
+                                    <path d="M12 18v3" />
+                                    <path d="M3 12h3" />
+                                    <path d="M18 12h3" />
+                                    <path d="M5.6 5.6l2.1 2.1" />
+                                    <path d="M16.3 16.3l2.1 2.1" />
+                                    <path d="M5.6 18.4l2.1-2.1" />
+                                    <path d="M16.3 7.7l2.1-2.1" />
+                                </svg>
+                                <span class="grammar-fix-btn__label">Fix Grammar</span>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="discover-grid" id="discoverGrid" aria-live="polite"></div>
+                    <div class="grammar-error" id="grammarError" hidden></div>
 
-                    <div class="discover-empty" id="discoverEmpty" hidden>
-                        <strong>No prompts found</strong>
-                        <p>Try a different search term or reset filters.</p>
-                        <button class="discover-reset" type="button" data-discover-action="reset-filters">Reset filters</button>
+                    <div class="grammar-result" id="grammarResult" hidden>
+                        <div class="grammar-result-header">
+                            <div class="grammar-result-tabs" role="tablist">
+                                <button class="grammar-tab is-active" type="button" data-tab="diff">Changes</button>
+                                <button class="grammar-tab" type="button" data-tab="clean">Corrected Text</button>
+                            </div>
+                            <div class="grammar-result-actions">
+                                <span class="grammar-changes-count" id="grammarChangesCount">0 changes</span>
+                                <button class="icon-btn" id="grammarCopyBtn" type="button" aria-label="Copy corrected text" data-tooltip="Copy">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <rect x="9" y="9" width="13" height="13" rx="2.5" ry="2.5"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grammar-panel grammar-panel--diff" id="grammarDiffPanel"></div>
+                        <div class="grammar-panel grammar-panel--clean" id="grammarCleanPanel" hidden></div>
                     </div>
 
-                    <p class="discover-footer">Insert a prompt into Chat, or send it immediately.</p>
+                    <div class="grammar-empty" id="grammarEmpty">
+                        <strong>No corrections yet</strong>
+                        <p>Paste some text above and click "Fix Grammar" to see suggested corrections.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -170,14 +186,13 @@
                 <span class="nav-label">Chat</span>
             </div>
 
-            <!-- 2. Discover -->
-            <div class="nav-item" role="button" tabindex="0" data-nav-item="discover">
+            <!-- 2. Grammar -->
+            <div class="nav-item" role="button" tabindex="0" data-nav-item="grammar">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M10 14l4-4" />
-                    <path d="M14 10l-2.5 5.5L10 14l5.5-2.5z" />
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                    <polyline points="8 12 10.5 14.5 16 9" />
                 </svg>
-                <span class="nav-label">Discover</span>
+                <span class="nav-label">Grammar</span>
             </div>
 
             <!-- 3. Agents -->

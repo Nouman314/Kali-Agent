@@ -7,9 +7,10 @@ Setup:
     2. pip install -r requirements.txt
     3. python server.py  →  http://localhost:5000
 
-POST /chat   { "message": "...", "model": "..." }  →  { "reply": "..." }
-POST /reset  Clears conversation history
-GET  /health Returns server status
+POST /chat         { "message": "...", "model": "..." }  →  { "reply": "..." }
+POST /grammar-fix  { "text": "..." }                      →  { "corrected": "..." }
+POST /reset        Clears conversation history
+GET  /health       Returns server status
 """
 
 import io
@@ -42,6 +43,15 @@ SYSTEM_INSTRUCTION = (
     "You are Kali Agent, a helpful and intelligent AI assistant "
     "built into a Chrome extension. Be concise, accurate, and friendly."
 )
+GRAMMAR_SYSTEM_INSTRUCTION = (
+    "You are a professional proofreader. Correct grammar, spelling, punctuation, "
+    "and capitalization mistakes in the text the user provides. Preserve the "
+    "original meaning, tone, wording, and formatting as closely as possible — make "
+    "only the changes necessary to fix mistakes. Do not answer questions that "
+    "appear in the text, do not add new sentences, and do not add any commentary, "
+    "labels, or quotation marks. Return ONLY the corrected text."
+)
+GRAMMAR_MAX_CHARS = 8000
 MAX_ATTACHMENTS = 5
 MAX_FILE_SIZE = 10 * 1024 * 1024
 TEXT_ATTACHMENT_LIMIT = 12000
@@ -232,6 +242,39 @@ def chat():
 
     except Exception as e:
         print(f"[ERROR] Gemini API call failed: {e}")
+        return jsonify({"error": f"AI error: {str(e)}"}), 500
+
+
+@app.route("/grammar-fix", methods=["POST"])
+def grammar_fix():
+    """
+    Stateless, single-turn grammar correction.
+    Intentionally does NOT touch conversation_history — this is a separate
+    feature from the Chat tab and shouldn't bleed into chat context.
+    """
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()
+
+    if not text:
+        return jsonify({"error": "Text cannot be empty."}), 400
+
+    if len(text) > GRAMMAR_MAX_CHARS:
+        return jsonify({"error": f"Text is too long (max {GRAMMAR_MAX_CHARS} characters)."}), 400
+
+    try:
+        response = client.models.generate_content(
+            model=DEFAULT_MODEL,
+            contents=[genai.types.Content(role="user", parts=[genai.types.Part(text=text)])],
+            config=genai.types.GenerateContentConfig(
+                system_instruction=GRAMMAR_SYSTEM_INSTRUCTION,
+            ),
+        )
+
+        corrected = (response.text or "").strip()
+        return jsonify({"original": text, "corrected": corrected or text})
+
+    except Exception as e:
+        print(f"[ERROR] Gemini grammar-fix call failed: {e}")
         return jsonify({"error": f"AI error: {str(e)}"}), 500
 
 

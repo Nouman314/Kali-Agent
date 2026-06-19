@@ -49,3 +49,19 @@ export async function resetChatSession() {
         // Reset is best-effort.
     }
 }
+
+export async function sendGrammarFixRequest({ text, signal }) {
+    const response = await fetch(CONFIG.ENDPOINTS.GRAMMAR, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+        signal,
+    });
+
+    const data = await readJsonResponse(response);
+    return {
+        response,
+        data,
+        ok: response.ok && !data.error,
+    };
+}

@@ -2,6 +2,7 @@ export const CONFIG = {
     ENDPOINTS: {
         CHAT: 'http://localhost:5000/chat',
         RESET: 'http://localhost:5000/reset',
+        GRAMMAR: 'http://localhost:5000/grammar-fix',
     },
     MODELS: {
         DEFAULT: 'gemini-3.1-flash-lite',
@@ -29,6 +30,9 @@ export const CONFIG = {
         MIN_INPUT_HEIGHT: 100,
         MAX_ATTACHMENTS: 5,
         MAX_FILE_SIZE_BYTES: 10 * 1024 * 1024,
+    },
+    GRAMMAR: {
+        MAX_CHARS: 8000,
     },
     TYPEWRITER: {
         CHUNK_SIZE: 5,

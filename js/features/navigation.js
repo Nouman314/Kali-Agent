@@ -4,7 +4,7 @@ let navigationBound = false;
 
 const VIEW_MAP = {
     chat: dom.chatView,
-    discover: dom.discoverView,
+    grammar: dom.grammarView,
 };
 
 function showView(name) {
