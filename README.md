@@ -29,7 +29,10 @@ Project Structure
 ├── background.js
 ├── manifest.json
 ├── popup.html
-├── popup.css
+├── popup/
+│   ├── popup-base.css
+│   ├── popup-chat.css
+│   └── popup-input.css
 ├── server.py
 ├── requirements.txt
 ├── icons/

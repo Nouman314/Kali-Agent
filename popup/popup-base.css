@@ -1,0 +1,338 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+.sidebar-shell {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    min-height: unset;
+    background: #ffffff;
+    border-left: 0.5px solid rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.main-panel {
+    width: calc(100% - 70px);
+    display: flex;
+    flex-direction: column;
+    border-right: 0.5px solid rgba(0, 0, 0, 0.1);
+    transition: width 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar-shell.sidebar-collapsed .main-panel {
+    width: 100%;
+    border-right-color: transparent;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+    height: 52px;
+    flex-shrink: 0;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: default;
+    user-select: none;
+}
+
+.header-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: #111111;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.icon-btn {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background 0.15s;
+}
+
+.icon-btn:hover {
+    background: #f3f4f6;
+    color: #111111;
+}
+
+.icon-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111111;
+    color: #ffffff;
+    font-size: 11px;
+    font-family: 'Inter', sans-serif;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 10;
+}
+
+.icon-btn[data-tooltip-side="bottom-left"]::after {
+    top: calc(100% + 8px);
+    left: auto;
+    right: 0;
+    transform: none;
+}
+
+.icon-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2;
+}
+
+.icon-btn:hover::after {
+    opacity: 1;
+}
+
+.bubble-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.bubble-actions button {
+    background: none;
+    position: relative;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 18px;
+    padding: 3px 5px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.bubble-actions button:hover {
+    color: #111111;
+    background: #f3f4f6;
+}
+
+.bubble-actions button::before {
+    content: attr(title);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111111;
+    color: #ffffff;
+    font-size: 11px;
+    font-family: 'Inter', sans-serif;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+
+.bubble-actions button svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+}
+
+.bubble-actions button:hover::before {
+    opacity: 1;
+}
+
+.empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.empty-icon {
+    font-size: 32px;
+    color: #9ca3af;
+}
+
+.model-option:hover {
+    background: #f3f4f6;
+}
+
+.right-nav {
+    width: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    gap: 2px;
+    background: #ffffff;
+    transition: width 0.2s ease, padding 0.2s ease, opacity 0.2s ease;
+}
+
+.sidebar-shell.sidebar-collapsed .right-nav {
+    width: 0;
+    padding: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 6px;
+    border-radius: 12px;
+    cursor: pointer;
+    width: 60px;
+    transition: background 0.15s;
+    text-decoration: none;
+}
+
+.nav-item:hover {
+    background: #f3f4f6;
+}
+
+.nav-item.active {
+    background: #f3f4f6;
+}
+
+.nav-item i {
+    font-size: 20px;
+    color: #6b7280;
+}
+
+.nav-item.active i {
+    color: #4B3FD8;
+}
+
+.nav-item.active svg {
+    color: #4B3FD8;
+}
+
+.nav-item svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+}
+
+.nav-label {
+    font-size: 10px;
+    color: #6b7280;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.nav-item.active .nav-label {
+    color: #4B3FD8;
+}
+
+.nav-spacer {
+    flex: 1;
+}
+
+.nav-divider {
+    width: 40px;
+    height: 0.5px;
+    background: rgba(0, 0, 0, 0.1);
+    margin: 6px 0;
+}
+
+.avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #4B3FD8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    position: relative;
+    cursor: pointer;
+    margin-bottom: 8px;
+}
+
+.avatar-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #22C55E;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    border: 1.5px solid #ffffff;
+}
+
+.message-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.message-wrapper:last-child {
+    margin-bottom: 0;
+}
+
+.message-wrapper--user {
+    align-items: flex-end;
+}
+
+.message-wrapper--ai {
+    align-items: flex-start;
+}
+
+.message-wrapper--user .bubble-actions {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.message-wrapper--user:hover .bubble-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.message-wrapper--ai .bubble-actions {
+    opacity: 1;
+    margin-left: 12px;
+}
+
+.bubble-actions button.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: transparent !important;
+    color: #9ca3af !important;
+}
