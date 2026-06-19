@@ -779,6 +779,7 @@ body {
 }
 
 .user-bubble-text {
+    display: block;
     white-space: pre-wrap;
 }
 
@@ -788,42 +789,62 @@ body {
     position: relative;
 }
 
-.has-show-more .user-bubble-text.is-collapsed::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 36px;
-    background: linear-gradient(to bottom, rgba(75, 63, 216, 0), #4b3fd8);
-    pointer-events: none;
-}
-
 .show-more-btn {
+    position: relative;
+    z-index: 1;
     align-self: flex-start;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 4px;
-    margin-top: 4px;
-    padding-top: 4px;
-    border: none;
-    background: none;
+    width: max-content;
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.92);
+    cursor: pointer;
     font-size: 12px;
     font-weight: 600;
-    color: #ffffff;
-    cursor: pointer;
-    width: 100%;
-    opacity: 1;
+    line-height: 1.2;
+    letter-spacing: 0;
+    box-shadow: none;
+    transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease;
 }
 
-.show-more-btn svg {
+.show-more-btn:hover {
+    opacity: 0.82;
+    transform: translateY(-0.5px);
+}
+
+.show-more-btn:active {
+    transform: translateY(0);
+}
+
+.show-more-btn:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.7);
+    outline-offset: 3px;
+}
+
+.show-more-btn__label {
+    position: relative;
+    top: 0;
+}
+
+.show-more-btn__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 14px;
     height: 14px;
-    stroke: #ffffff;
-    transition: transform 0.2s ease;
+    transition: transform 0.18s ease;
 }
 
-.show-more-btn.is-expanded svg {
+.show-more-btn__icon svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+}
+
+.show-more-btn.is-expanded .show-more-btn__icon {
     transform: rotate(180deg);
 }
 

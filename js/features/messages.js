@@ -76,10 +76,13 @@ function renderUserBubbleText(bubble, text) {
             const toggleBtn = document.createElement('button');
             toggleBtn.type = 'button';
             toggleBtn.className = 'show-more-btn';
-            toggleBtn.innerHTML = `<span>Show more</span>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M6 9l6 6 6-6"/>
-                </svg>`;
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            toggleBtn.innerHTML = `<span class="show-more-btn__label">See more</span>
+                <span class="show-more-btn__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7.5 10.5L12 15l4.5-4.5"/>
+                    </svg>
+                </span>`;
 
             bubble.appendChild(toggleBtn);
         }
@@ -340,8 +343,9 @@ function handleBubbleActionClick(event) {
 
         const collapsed = textSpan.classList.toggle('is-collapsed');
         showMoreButton.classList.toggle('is-expanded', !collapsed);
-        const label = showMoreButton.querySelector('span');
-        if (label) label.textContent = collapsed ? 'Show more' : 'Show less';
+        showMoreButton.setAttribute('aria-expanded', String(!collapsed));
+        const label = showMoreButton.querySelector('.show-more-btn__label');
+        if (label) label.textContent = collapsed ? 'See more' : 'See less';
         return;
     }
 
@@ -532,3 +536,7 @@ export async function sendMessage() {
 
     await processAiResponse({ text, attachments });
 }
+
+
+
+
