@@ -214,6 +214,7 @@ body {
     padding: 8px 6px;
     border-radius: 12px;
     cursor: pointer;
+    color: rgb(10 13 51 / 60%);
     width: 60px;
     transition: background 0.15s;
     text-decoration: none;

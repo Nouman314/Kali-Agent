@@ -1,0 +1,94 @@
+.chat-view,
+.discover-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#chatView[hidden],
+#discoverView[hidden] {
+    display: none !important;
+}
+
+.discover-view {
+    padding: 24px 20px;
+    overflow-y: auto;
+}
+
+.discover-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111111;
+    margin-bottom: 4px;
+}
+
+.discover-header p {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 20px;
+}
+
+.discover-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.discover-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px;
+    border: 0.5px solid rgba(0, 0, 0, 0.1);
+    border-radius: 14px;
+    background: #ffffff;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.discover-card:hover {
+    background: #f9fafb;
+    border-color: rgba(75, 63, 216, 0.25);
+    transform: translateY(-1px);
+}
+
+.discover-card:active {
+    transform: translateY(0);
+}
+
+.discover-card:focus-visible {
+    outline: 2px solid rgba(75, 63, 216, 0.35);
+    outline-offset: 2px;
+}
+
+.discover-card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #6073ea, #4b3fd8);
+    color: #ffffff;
+}
+
+.discover-card-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.discover-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111111;
+}
+
+.discover-card-desc {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
