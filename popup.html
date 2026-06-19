@@ -117,42 +117,46 @@
             </div>
 
             <div class="discover-view" id="discoverView" hidden>
-                <div class="discover-header">
-                    <h2>Discover</h2>
-                    <p>Jump-start a conversation with a ready-made prompt.</p>
-                </div>
-                <div class="discover-grid">
-                    <button class="discover-card" data-prompt="Summarize this document for me in 3 bullet points.">
-                        <div class="discover-card-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M5 12v-7a2 2 0 0 1 2-2h7l5 5v4"/><path d="M5 21v-6h1.5a1.5 1.5 0 0 1 0 3h-1.5"/></svg>
+                <div class="discover-shell">
+                    <div class="discover-hero">
+                        <div>
+                            <div class="discover-kicker">Prompt Library</div>
+                            <h2>Discover</h2>
+                            <p class="discover-subtitle">Jump-start a conversation with a ready-made prompt.</p>
                         </div>
-                        <span class="discover-card-title">Summarize</span>
-                        <span class="discover-card-desc">Condense a document or article</span>
-                    </button>
+                        <div class="discover-hero-meta">
+                            <span class="discover-count" id="discoverCount">0 prompts</span>
+                            <button class="discover-shuffle" id="discoverShuffleBtn" type="button">Shuffle</button>
+                        </div>
+                    </div>
 
-                    <button class="discover-card" data-prompt="Write a short, professional email about: ">
-                        <div class="discover-card-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
-                        </div>
-                        <span class="discover-card-title">Write</span>
-                        <span class="discover-card-desc">Draft an email or message</span>
-                    </button>
+                    <div class="discover-controls">
+                        <label class="discover-search" for="discoverSearch">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.3-4.3"></path>
+                            </svg>
+                            <input id="discoverSearch" type="search" placeholder="Search prompts..." autocomplete="off">
+                        </label>
 
-                    <button class="discover-card" data-prompt="Review this code and suggest improvements: ">
-                        <div class="discover-card-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                        <div class="discover-filters" aria-label="Prompt filters">
+                            <button class="discover-filter is-active" type="button" data-filter="all">All</button>
+                            <button class="discover-filter" type="button" data-filter="work">Work</button>
+                            <button class="discover-filter" type="button" data-filter="writing">Writing</button>
+                            <button class="discover-filter" type="button" data-filter="code">Code</button>
+                            <button class="discover-filter" type="button" data-filter="ideas">Ideas</button>
                         </div>
-                        <span class="discover-card-title">Code</span>
-                        <span class="discover-card-desc">Review or debug a snippet</span>
-                    </button>
+                    </div>
 
-                    <button class="discover-card" data-prompt="Brainstorm 5 ideas for: ">
-                        <div class="discover-card-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
-                        </div>
-                        <span class="discover-card-title">Brainstorm</span>
-                        <span class="discover-card-desc">Generate ideas on a topic</span>
-                    </button>
+                    <div class="discover-grid" id="discoverGrid" aria-live="polite"></div>
+
+                    <div class="discover-empty" id="discoverEmpty" hidden>
+                        <strong>No prompts found</strong>
+                        <p>Try a different search term or reset filters.</p>
+                        <button class="discover-reset" type="button" data-discover-action="reset-filters">Reset filters</button>
+                    </div>
+
+                    <p class="discover-footer">Insert a prompt into Chat, or send it immediately.</p>
                 </div>
             </div>
         </div>

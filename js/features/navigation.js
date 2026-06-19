@@ -45,27 +45,17 @@ function handleNavKeydown(event) {
     }
 }
 
-function handleDiscoverCardClick(event) {
-    const card = event.target.closest('.discover-card');
-    if (!card) return;
-
-    const prompt = card.getAttribute('data-prompt') || '';
-    if (dom.inputBox) {
-        dom.inputBox.value = prompt;
-        dom.inputBox.focus();
-        dom.inputBox.dispatchEvent(new Event('input'));
-    }
-
-    const chatNavItem = dom.rightNav?.querySelector('[data-nav-item="chat"]');
-    if (chatNavItem) setActive(chatNavItem);
-}
-
 function toggleSidebar() {
     if (!dom.sidebarShell || !dom.sidebarToggleBtn) return;
 
     const isCollapsed = dom.sidebarShell.classList.toggle('sidebar-collapsed');
     dom.sidebarToggleBtn.setAttribute('aria-pressed', String(isCollapsed));
     dom.sidebarToggleBtn.setAttribute('data-tooltip', isCollapsed ? 'Show sidebar' : 'Hide sidebar');
+}
+
+export function goToChat() {
+    const chatItem = dom.rightNav?.querySelector('[data-nav-item="chat"]');
+    if (chatItem) setActive(chatItem);
 }
 
 export function bindNavigation() {
@@ -75,5 +65,4 @@ export function bindNavigation() {
     dom.rightNav?.addEventListener('click', handleNavClick);
     dom.rightNav?.addEventListener('keydown', handleNavKeydown);
     dom.sidebarToggleBtn?.addEventListener('click', toggleSidebar);
-    dom.discoverView?.addEventListener('click', handleDiscoverCardClick);
 }
