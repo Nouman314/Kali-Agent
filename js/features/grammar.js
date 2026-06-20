@@ -239,5 +239,6 @@ export function bindGrammarInteractions() {
     dom.grammarCopyBtn?.addEventListener('click', handleCopyClick);
     dom.grammarResult?.addEventListener('click', handleTabClick);
 
+    if (dom.grammarResult) dom.grammarResult.hidden = true;
     updateCounter();
 }

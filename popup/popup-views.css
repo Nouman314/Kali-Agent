@@ -176,7 +176,11 @@
     border: 0.5px solid rgba(0, 0, 0, 0.1);
     border-radius: 14px;
     background: #ffffff;
-    overflow: hidden;
+    overflow: hidden; 
+}
+
+.grammar-result[hidden] {
+    display: none !important;
 }
 
 .grammar-result-header {
