@@ -190,11 +190,24 @@ async function handleCopyClick() {
     const text = lastCorrectedText || dom.grammarCleanPanel?.textContent || '';
     if (!text || !dom.grammarCopyBtn) return;
 
+    const svg = dom.grammarCopyBtn.querySelector('svg');
+    const originalSVG = svg?.innerHTML || '';
+
     try {
         await navigator.clipboard.writeText(text);
+
+        if (svg) {
+            svg.innerHTML = '<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>';
+            svg.style.stroke = '#22c55e';
+        }
+
         dom.grammarCopyBtn.classList.add('is-copied');
         dom.grammarCopyBtn.setAttribute('data-tooltip', 'Copied!');
         setTimeout(() => {
+            if (svg) {
+                svg.innerHTML = originalSVG;
+                svg.style.stroke = '';
+            }
             dom.grammarCopyBtn.classList.remove('is-copied');
             dom.grammarCopyBtn.setAttribute('data-tooltip', 'Copy');
         }, 1500);
