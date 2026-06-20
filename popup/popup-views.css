@@ -14,6 +14,26 @@
 .grammar-view {
     padding: 24px 20px;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.grammar-view::-webkit-scrollbar {
+    width: 6px;
+}
+
+.grammar-view::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+}
+
+.grammar-view::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.grammar-view::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
 }
 
 .grammar-shell {
