@@ -148,7 +148,6 @@ function renderGrammarResult(original, corrected) {
     }
 
     if (dom.grammarResult) dom.grammarResult.hidden = false;
-    if (dom.grammarEmpty) dom.grammarEmpty.hidden = true;
 
     setActiveTab('diff');
 }

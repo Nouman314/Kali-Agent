@@ -14,7 +14,6 @@ export const dom = {
     grammarFixBtn: query('#grammarFixBtn'),
     grammarError: query('#grammarError'),
     grammarResult: query('#grammarResult'),
-    grammarEmpty: query('#grammarEmpty'),
     grammarDiffPanel: query('#grammarDiffPanel'),
     grammarCleanPanel: query('#grammarCleanPanel'),
     grammarChangesCount: query('#grammarChangesCount'),
