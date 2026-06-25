@@ -21,6 +21,7 @@ export const dom = {
     grammarTabs: Array.from(document.querySelectorAll('.grammar-tab')),
     emptyStateTemplate: query('#emptyStateTemplate'),
     emptyStateHTML: query('#emptyStateTemplate')?.innerHTML.trim() || '',
+    overlay: query('#overlay'),
     modelSelectBtn: query('#modelSelectBtn'),
     modelDropdown: query('#modelDropdown'),
     selectedModelText: query('#selectedModelText'),
@@ -33,4 +34,7 @@ export const dom = {
     exportBtn: query('.header-actions .icon-btn[aria-label="Export"]'),
     sidebarToggleBtn: query('.right-nav .nav-toggle-btn'),
     rightNav: query('.right-nav'),
+    avatarBtn: query('#avatarBtn'),
+    avatarWrapper: query('.avatar-wrapper'),
+    userMenu: query('#userMenu'),
 };

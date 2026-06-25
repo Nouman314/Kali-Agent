@@ -58,6 +58,18 @@ function toggleSidebar() {
     }
 }
 
+function toggleUserMenu() {
+    if (!dom.avatarBtn || !dom.userMenu) return;
+    const isVisible = !dom.userMenu.hidden;
+    dom.userMenu.hidden = isVisible;
+    dom.sidebarShell?.classList.toggle('user-menu-open', !isVisible);
+}
+
+function closeUserMenu() {
+    if (dom.userMenu) dom.userMenu.hidden = true;
+    dom.sidebarShell?.classList.remove('user-menu-open');
+}
+
 export function goToChat() {
     const chatItem = dom.rightNav?.querySelector('[data-nav-item="chat"]');
     if (chatItem) setActive(chatItem);
@@ -70,4 +82,16 @@ export function bindNavigation() {
     dom.rightNav?.addEventListener('click', handleNavClick);
     dom.rightNav?.addEventListener('keydown', handleNavKeydown);
     dom.sidebarToggleBtn?.addEventListener('click', toggleSidebar);
+    if (dom.avatarBtn) {
+        dom.avatarBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            toggleUserMenu();
+        });
+    }
+
+    document.addEventListener('click', (event) => {
+        if (!dom.userMenu?.hidden) {
+            closeUserMenu();
+        }
+    });
 }
