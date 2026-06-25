@@ -123,7 +123,7 @@
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    border-radius: 10px;
+    border-radius: 25px;
     border: none;
     background: #4B3FD8;
     color: #fff;
@@ -199,7 +199,7 @@
 
 .grammar-tab {
     padding: 6px 12px;
-    border-radius: 999px;
+    border-radius: 25px;
     border: 0.5px solid rgba(0, 0, 0, 0.1);
     background: #ffffff;
     color: #6b7280;
