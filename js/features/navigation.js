@@ -5,6 +5,7 @@ let navigationBound = false;
 const VIEW_MAP = {
     chat: dom.chatView,
     grammar: dom.grammarView,
+    agents: dom.agentsView,
 };
 
 function showView(name) {

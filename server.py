@@ -197,6 +197,7 @@ def chat():
     if is_multipart:
         user_message = request.form.get("message", "").strip()
         selected_model = request.form.get("model") or DEFAULT_MODEL
+        system_instruction = request.form.get("system_instruction") or SYSTEM_INSTRUCTION
         uploaded_files = request.files.getlist("attachments")
     else:
         data = request.get_json(silent=True) or {}
@@ -206,6 +207,7 @@ def chat():
 
         user_message = data["message"].strip()
         selected_model = data.get("model") or DEFAULT_MODEL
+        system_instruction = data.get("system_instruction") or SYSTEM_INSTRUCTION
         uploaded_files = []
 
     if not user_message and not uploaded_files:
@@ -230,7 +232,7 @@ def chat():
             model=selected_model,
             contents=contents,
             config=genai.types.GenerateContentConfig(
-                system_instruction=SYSTEM_INSTRUCTION,
+                system_instruction=system_instruction,
             ),
         )
 

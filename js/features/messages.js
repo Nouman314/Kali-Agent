@@ -135,6 +135,34 @@ function createBubbleActions(role) {
     return actions;
 }
 
+const AGENT_ICONS = {
+    terminal: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+        </svg>`,
+    shield: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>`,
+    radar: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="6"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+        </svg>`,
+    search: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>`,
+    code: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>`
+};
+
 function createBubbleWrapper(role, showActions = true) {
     const wrapper = document.createElement('div');
     wrapper.className = `message-wrapper message-wrapper--${role}`;
@@ -143,15 +171,28 @@ function createBubbleWrapper(role, showActions = true) {
         const agentHeader = document.createElement('div');
         agentHeader.className = 'ai-agent-header';
 
-        const agentIcon = document.createElement('img');
-        agentIcon.src = chrome.runtime.getURL('icons/icon400.png');
-        agentIcon.className = 'ai-agent-icon';
+        const activeAgent = state.activeAgent;
+        if (activeAgent) {
+            const iconWrapper = document.createElement('div');
+            iconWrapper.className = `ai-agent-icon-wrapper ${activeAgent.icon}`;
+            iconWrapper.innerHTML = AGENT_ICONS[activeAgent.icon] || AGENT_ICONS.terminal;
 
-        const agentName = document.createElement('span');
-        agentName.textContent = 'Kali Agent';
+            const agentName = document.createElement('span');
+            agentName.textContent = activeAgent.name;
 
-        agentHeader.appendChild(agentIcon);
-        agentHeader.appendChild(agentName);
+            agentHeader.appendChild(iconWrapper);
+            agentHeader.appendChild(agentName);
+        } else {
+            const agentIcon = document.createElement('img');
+            agentIcon.src = chrome.runtime.getURL('icons/icon400.png');
+            agentIcon.className = 'ai-agent-icon';
+
+            const agentName = document.createElement('span');
+            agentName.textContent = 'Kali Agent';
+
+            agentHeader.appendChild(agentIcon);
+            agentHeader.appendChild(agentName);
+        }
         wrapper.appendChild(agentHeader);
     }
 
@@ -439,6 +480,7 @@ export async function processAiResponse({ text, attachments = [] }) {
             model: state.currentModel,
             attachments,
             signal: state.abortController.signal,
+            systemInstruction: state.activeAgent?.systemInstruction || undefined,
         });
 
         clearInterval(thinkingInterval);

@@ -8,7 +8,7 @@ async function readJsonResponse(response) {
     }
 }
 
-export async function sendChatRequest({ message, model, attachments = [], signal }) {
+export async function sendChatRequest({ message, model, attachments = [], signal, systemInstruction }) {
     const hasAttachments = attachments.length > 0;
     let response;
 
@@ -16,6 +16,9 @@ export async function sendChatRequest({ message, model, attachments = [], signal
         const formData = new FormData();
         formData.append('message', message);
         formData.append('model', model);
+        if (systemInstruction) {
+            formData.append('system_instruction', systemInstruction);
+        }
         attachments.forEach((entry) => {
             formData.append('attachments', entry.file, entry.file.name);
         });
@@ -29,7 +32,7 @@ export async function sendChatRequest({ message, model, attachments = [], signal
         response = await fetch(CONFIG.ENDPOINTS.CHAT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, model }),
+            body: JSON.stringify({ message, model, system_instruction: systemInstruction }),
             signal,
         });
     }

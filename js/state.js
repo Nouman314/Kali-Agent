@@ -10,4 +10,5 @@ export const state = {
     startHeight: 0,
     attachedFiles: [],
     attachmentIdCounter: 0,
+    activeAgent: null, // Tracks selected agent { id, name, systemInstruction, icon }
 };

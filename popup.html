@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="popup/popup-chat.css">
     <link rel="stylesheet" href="popup/popup-input.css">
     <link rel="stylesheet" href="popup/popup-views.css">
+    <link rel="stylesheet" href="popup/popup-agents.css">
     <link rel="stylesheet" href="github.min.css">
     <script src="marked.min.js"></script>
     <script src="highlight.min.js"></script>
@@ -25,6 +26,15 @@
                 <div class="header">
                     <div class="header-left">
                         <span class="header-title">New Chat</span>
+                        <span id="activeAgentBadge" class="active-agent-badge" style="display: none;">
+                            <span class="agent-badge-name">Kali Helper</span>
+                            <button type="button" class="active-agent-badge-close" aria-label="Clear active agent" id="clearActiveAgentBtn">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="12" height="12">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </span>
                     </div>
                     <div class="header-actions">
                         <!-- 1. New Chat (Square Pen) -->
@@ -146,6 +156,34 @@
                         <div class="grammar-panel grammar-panel--diff" id="grammarDiffPanel"></div>
                         <div class="grammar-panel grammar-panel--clean" id="grammarCleanPanel" hidden></div>
                     </div>
+                </div>
+            </div>
+
+            <div class="agents-view" id="agentsView" hidden>
+                <div class="agents-hero">
+                    <h2>AI Agents</h2>
+                    <p class="agents-subtitle">Deploy specialized assistants with tailored knowledge and capabilities for cyber operations.</p>
+                </div>
+
+                <div class="agents-toolbar">
+                    <div class="agents-search-wrapper">
+                        <svg class="agents-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="agentsSearch" class="agents-search-input" placeholder="Search agents...">
+                    </div>
+                    <button class="create-agent-btn" id="createAgentBtn" type="button">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Create Agent
+                    </button>
+                </div>
+
+                <div class="agents-grid" id="agentsGrid">
+                    <!-- Agent cards will be dynamically injected here -->
                 </div>
             </div>
         </div>
@@ -323,6 +361,76 @@
             <span>Start a new conversation</span>
         </div>
     </template>
+
+    <!-- Create Custom Agent Modal -->
+    <div class="modal-overlay" id="agentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create Custom Agent</h3>
+                <button class="modal-close-btn" id="closeAgentModalBtn" type="button" aria-label="Close modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="agentModalForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="customAgentName">Agent Name</label>
+                        <input type="text" id="customAgentName" class="form-control" placeholder="e.g., Python Debugger" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="customAgentDesc">Description</label>
+                        <input type="text" id="customAgentDesc" class="form-control" placeholder="Briefly describe what this agent does" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="customAgentPrompt">System Instructions</label>
+                        <textarea id="customAgentPrompt" class="form-control" placeholder="e.g., You are an expert Python debugger. Analyze code and point out bugs..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Select Icon & Color Theme</label>
+                        <div class="icon-selector" id="customAgentIconSelector">
+                            <div class="icon-option is-selected" data-icon="terminal">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="4 17 10 11 4 5"></polyline>
+                                    <line x1="12" y1="19" x2="20" y2="19"></line>
+                                </svg>
+                            </div>
+                            <div class="icon-option shield" data-icon="shield">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                            </div>
+                            <div class="icon-option radar" data-icon="radar">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                                    <path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path>
+                                    <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path>
+                                </svg>
+                            </div>
+                            <div class="icon-option search" data-icon="search">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </div>
+                            <div class="icon-option code" data-icon="code">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="16 18 22 12 16 6"></polyline>
+                                    <polyline points="8 6 2 12 8 18"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="cancelAgentBtn">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Agent</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script src="js/main.js" type="module"></script>
 </body>
