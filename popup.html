@@ -46,16 +46,6 @@
                         </svg>
                     </button>
 
-                    <!-- 3. Toggle Sidebar (Left Sidebar Collapse) -->
-                    <button class="icon-btn" aria-label="Toggle sidebar" data-tooltip="Hide sidebar"
-                        data-tooltip-side="bottom-left">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="4" y="4" width="16" height="16" rx="2" />
-                            <path d="M9 4v16" />
-                            <path d="M14 10l-2 2l2 2" />
-                        </svg>
-                    </button>
                 </div>
             </div>
 
@@ -162,6 +152,15 @@
         </div>
 
         <div class="right-nav">
+            <button class="icon-btn nav-toggle-btn" aria-label="Toggle sidebar" aria-pressed="false" data-tooltip="Hide sidebar" type="button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="4" y="4" width="16" height="16" rx="2" />
+                    <path d="M9 4v16" />
+                    <path d="M14 10l-2 2l2 2" />
+                </svg>
+            </button>
+
             <!-- 1. Chat (Active) -->
             <div class="nav-item active" role="button" tabindex="0" data-nav-item="chat">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

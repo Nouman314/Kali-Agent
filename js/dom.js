@@ -31,6 +31,6 @@ export const dom = {
     plusBtn: query('.plus-btn'),
     newChatBtn: query('.header-actions .icon-btn[aria-label="New chat"]'),
     exportBtn: query('.header-actions .icon-btn[aria-label="Export"]'),
-    sidebarToggleBtn: query('.header-actions .icon-btn[aria-label="Toggle sidebar"]'),
+    sidebarToggleBtn: query('.right-nav .nav-toggle-btn'),
     rightNav: query('.right-nav'),
 };
