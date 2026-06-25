@@ -51,6 +51,11 @@ function toggleSidebar() {
     const isCollapsed = dom.sidebarShell.classList.toggle('sidebar-collapsed');
     dom.sidebarToggleBtn.setAttribute('aria-pressed', String(isCollapsed));
     dom.sidebarToggleBtn.setAttribute('data-tooltip', isCollapsed ? 'Show sidebar' : 'Hide sidebar');
+
+    const arrowPath = dom.sidebarToggleBtn.querySelector('svg path:last-child');
+    if (arrowPath) {
+        arrowPath.setAttribute('d', isCollapsed ? 'M13.5 10l2 2l-2 2' : 'M15.5 10l-2 2l2 2');
+    }
 }
 
 export function goToChat() {
