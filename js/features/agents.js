@@ -188,9 +188,7 @@ export function renderAgents() {
         if (deleteBtn) {
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (confirm(`Are you sure you want to delete the custom agent "${agent.name}"?`)) {
-                    deleteAgent(agent.id);
-                }
+                showDeleteConfirm(card, agent.id);
             });
         }
 
@@ -268,6 +266,43 @@ export function deactivateAgent() {
     renderAgents();
 }
 
+function showDeleteConfirm(card, agentId) {
+    const agent = PRESET_AGENTS.find(a => a.id === agentId) || getCustomAgents().find(a => a.id === agentId);
+    const name = agent ? agent.name : 'this agent';
+
+    const modal = document.getElementById('deleteConfirmModal');
+    const nameEl = document.getElementById('deleteAgentName');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    const cancelBtns = document.querySelectorAll('#cancelDeleteBtn, #cancelDeleteBtn2');
+
+    if (!modal) return;
+    nameEl.textContent = name;
+    modal.classList.add('is-visible');
+
+    function cleanup() {
+        modal.classList.remove('is-visible');
+    }
+
+    function onConfirm() {
+        cleanup();
+        deleteAgent(agentId);
+    }
+
+    function onCancel() {
+        cleanup();
+    }
+
+    confirmBtn.addEventListener('click', onConfirm, { once: true });
+    cancelBtns.forEach(btn => btn.addEventListener('click', onCancel, { once: true }));
+
+    modal.addEventListener('click', function handler(e) {
+        if (e.target === modal) {
+            cleanup();
+            modal.removeEventListener('click', handler);
+        }
+    });
+}
+
 function deleteAgent(id) {
     const customAgents = getCustomAgents();
     const filtered = customAgents.filter(a => a.id !== id);
@@ -327,6 +362,25 @@ export function bindAgentsInteractions() {
         opt.addEventListener('click', () => {
             iconOptions.forEach(o => o.classList.remove('is-selected'));
             opt.classList.add('is-selected');
+        });
+    });
+
+    // Preset template buttons
+    const presetBtns = dom.agentModal?.querySelectorAll('.preset-template-btn');
+    presetBtns?.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const presetId = btn.getAttribute('data-preset');
+            const preset = PRESET_AGENTS.find(a => a.id === presetId);
+            if (!preset) return;
+
+            dom.customAgentName.value = preset.name;
+            dom.customAgentDesc.value = preset.description;
+            dom.customAgentPrompt.value = preset.systemInstruction;
+
+            const iconOptions = dom.customAgentIconSelector?.querySelectorAll('.icon-option');
+            iconOptions?.forEach(opt => {
+                opt.classList.toggle('is-selected', opt.getAttribute('data-icon') === preset.icon);
+            });
         });
     });
 
