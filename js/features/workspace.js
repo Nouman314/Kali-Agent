@@ -139,6 +139,34 @@ function highlightCodeBlocks(root) {
     });
 }
 
+async function typeWorkspaceText(element, text, speed = CONFIG.TYPEWRITER.SPEED_MS) {
+    element.innerHTML = '';
+    let i = 0;
+
+    return new Promise((resolve) => {
+        function type() {
+            if (i < text.length) {
+                i = Math.min(i + CONFIG.TYPEWRITER.CHUNK_SIZE, text.length);
+                element.innerHTML = renderMarkdown(text.slice(0, i));
+                if (dom.workspaceChatArea) {
+                    dom.workspaceChatArea.scrollTop = dom.workspaceChatArea.scrollHeight;
+                }
+                setTimeout(type, speed);
+                return;
+            }
+
+            element.innerHTML = renderMarkdown(text);
+            highlightCodeBlocks(element);
+            if (dom.workspaceChatArea) {
+                dom.workspaceChatArea.scrollTop = dom.workspaceChatArea.scrollHeight;
+            }
+            resolve();
+        }
+
+        type();
+    });
+}
+
 // ---------- Landing grid ----------
 
 export function renderWorkspaceCards() {
@@ -737,9 +765,8 @@ async function requestWorkspaceResponse(text) {
 
         state.workspace.fileSent = true;
         const reply = data.reply || "I couldn't find anything to say about that.";
-        aiBubble.innerHTML = renderMarkdown(reply);
         aiBubble.dataset.rawText = reply;
-        highlightCodeBlocks(aiBubble);
+        await typeWorkspaceText(aiBubble, reply, CONFIG.TYPEWRITER.SPEED_MS);
 
         const aiWrapper = aiBubble.closest('.message-wrapper');
         ensureBubbleActions(aiWrapper, 'ai');
