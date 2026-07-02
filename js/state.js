@@ -11,4 +11,11 @@ export const state = {
     attachedFiles: [],
     attachmentIdCounter: 0,
     activeAgent: null, // Tracks selected agent { id, name, systemInstruction, icon }
+    workspace: {
+        activeType: null, // 'pdf' | 'ppt' | 'docx' | 'xlsx' | 'txt' | 'md'
+        file: null, // The uploaded File object
+        fileTextContent: null, // Cached text content for txt/md previews
+        previewUrl: null, // Object URL used for the PDF preview iframe
+        messages: [], // { role: 'user' | 'ai', text }[] — frontend-only for now
+    },
 };

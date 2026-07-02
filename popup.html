@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="popup/popup-input.css">
     <link rel="stylesheet" href="popup/popup-views.css">
     <link rel="stylesheet" href="popup/popup-agents.css">
+    <link rel="stylesheet" href="popup/popup-workspace.css">
     <link rel="stylesheet" href="github.min.css">
     <script src="marked.min.js"></script>
     <script src="highlight.min.js"></script>
@@ -184,6 +185,98 @@
 
                 <div class="agents-grid" id="agentsGrid">
                     <!-- Agent cards will be dynamically injected here -->
+                </div>
+            </div>
+
+            <div class="workspace-view" id="workspaceView" hidden>
+                <!-- Landing grid: pick a file type -->
+                <div class="workspace-grid-state" id="workspaceGridState">
+                    <div class="agents-hero">
+                        <h2>Talk to Your Files</h2>
+                        <p class="agents-subtitle">Pick a file type, upload a document, and chat with it directly.</p>
+                    </div>
+
+                    <div class="agents-grid workspace-grid" id="workspaceGrid">
+                        <!-- File type cards will be dynamically injected here -->
+                    </div>
+                </div>
+
+                <!-- Session: file on the left, chat on the right -->
+                <div class="workspace-session" id="workspaceSession" hidden>
+                    <div class="workspace-session-header">
+                        <button type="button" class="workspace-back-btn" id="workspaceBackBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                            Back
+                        </button>
+                        <div class="workspace-session-title">
+                            <div class="workspace-session-icon" id="workspaceSessionIcon"></div>
+                            <span id="workspaceSessionLabel">Document</span>
+                        </div>
+                    </div>
+
+                    <div class="workspace-split" id="workspaceSplit">
+                        <!-- Left pane: upload / preview -->
+                        <div class="workspace-file-pane">
+                            <div class="workspace-dropzone" id="workspaceDropzone">
+                                <input type="file" id="workspaceFileInput" class="attachment-input" hidden>
+                                <div class="workspace-dropzone-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                        <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" />
+                                        <path d="M12 21v-8" />
+                                        <path d="M9 16l3 -3l3 3" />
+                                    </svg>
+                                </div>
+                                <p class="workspace-dropzone-title">Drop your file here</p>
+                                <p class="workspace-dropzone-sub">or click to browse</p>
+                                <button type="button" class="btn-primary workspace-browse-btn" id="workspaceBrowseBtn">Choose File</button>
+                            </div>
+
+                            <div class="workspace-file-preview" id="workspaceFilePreview" hidden>
+                                <div class="workspace-file-preview-header">
+                                    <div class="workspace-file-info">
+                                        <div class="attachment-icon" id="workspaceFileIcon"></div>
+                                        <div class="attachment-meta">
+                                            <div class="attachment-name" id="workspaceFileName"></div>
+                                            <div class="attachment-size" id="workspaceFileSize"></div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="workspace-remove-file-btn" id="workspaceRemoveFileBtn" aria-label="Remove file">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="workspace-file-preview-body" id="workspaceFilePreviewBody"></div>
+                            </div>
+                        </div>
+
+                        <!-- Right pane: chat with the document -->
+                        <div class="workspace-chat-pane">
+                            <div class="chat-area workspace-chat-area" id="workspaceChatArea"></div>
+
+                            <div class="input-area workspace-input-area">
+                                <div class="input-box-wrapper">
+                                    <textarea id="workspaceChatInput" class="input-box" placeholder="Upload a file to start chatting" disabled></textarea>
+                                    <div class="input-footer">
+                                        <span class="workspace-input-hint">Frontend preview &mdash; backend not connected yet</span>
+                                        <div class="input-right">
+                                            <button class="send-btn" id="workspaceSendBtn" type="button" disabled aria-label="Send">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 18px !important; height: 18px !important;">
+                                                    <line x1="12" y1="19" x2="12" y2="5" />
+                                                    <polyline points="5 12 12 5 19 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

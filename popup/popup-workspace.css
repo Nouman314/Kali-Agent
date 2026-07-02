@@ -1,0 +1,402 @@
+/* popup-workspace.css */
+
+.workspace-view {
+    padding: 24px 20px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    font-family: 'Inter', 'Geist', sans-serif;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.workspace-view[hidden],
+#workspaceView[hidden] {
+    display: none !important;
+}
+
+.workspace-view * {
+    font-family: inherit;
+}
+
+.workspace-view::-webkit-scrollbar {
+    width: 6px;
+}
+
+.workspace-view::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+}
+
+.workspace-view::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.workspace-view::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.workspace-grid-state {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.workspace-grid-state[hidden] {
+    display: none !important;
+}
+
+.workspace-grid {
+    margin-bottom: 4px;
+}
+
+/* Reuses .agent-card / .agent-card-header / .agent-card-icon-wrapper etc.
+   from popup-agents.css so the file-type cards match agent cards exactly. */
+
+.agent-card-icon-wrapper.pdf { background: rgba(239, 68, 68, 0.08); color: #ef4444; }
+.agent-card-icon-wrapper.ppt { background: rgba(234, 88, 12, 0.08); color: #ea580c; }
+.agent-card-icon-wrapper.docx { background: rgba(79, 70, 229, 0.08); color: #4f46e5; }
+.agent-card-icon-wrapper.xlsx { background: rgba(22, 163, 74, 0.08); color: #16a34a; }
+.agent-card-icon-wrapper.txt { background: rgba(100, 116, 139, 0.08); color: #64748b; }
+.agent-card-icon-wrapper.md { background: rgba(124, 58, 237, 0.08); color: #7c3aed; }
+
+/* ---------- Session shell ---------- */
+
+.workspace-session {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    margin: -24px -20px;
+}
+
+.workspace-session[hidden] {
+    display: none !important;
+}
+
+.workspace-session-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.workspace-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 7px 10px 7px 8px;
+    border-radius: 10px;
+    border: 0.5px solid rgba(0, 0, 0, 0.12);
+    background: #ffffff;
+    color: #374151;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+}
+
+.workspace-back-btn:hover {
+    background: #f9fafb;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.workspace-back-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.workspace-session-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.workspace-session-title span {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: #111111;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workspace-session-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(75, 63, 216, 0.08);
+    color: #4b3fd8;
+    flex-shrink: 0;
+}
+
+.workspace-session-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+.workspace-session-icon.pdf { background: rgba(239, 68, 68, 0.08); color: #ef4444; }
+.workspace-session-icon.ppt { background: rgba(234, 88, 12, 0.08); color: #ea580c; }
+.workspace-session-icon.docx { background: rgba(79, 70, 229, 0.08); color: #4f46e5; }
+.workspace-session-icon.xlsx { background: rgba(22, 163, 74, 0.08); color: #16a34a; }
+.workspace-session-icon.txt { background: rgba(100, 116, 139, 0.08); color: #64748b; }
+.workspace-session-icon.md { background: rgba(124, 58, 237, 0.08); color: #7c3aed; }
+
+/* ---------- Split layout ---------- */
+
+.workspace-split {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.workspace-split.is-stacked {
+    flex-direction: column;
+}
+
+.workspace-file-pane {
+    flex: 0 0 40%;
+    min-width: 180px;
+    max-width: 320px;
+    border-right: 0.5px solid rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.workspace-split.is-stacked .workspace-file-pane {
+    flex: 0 0 auto;
+    max-width: none;
+    max-height: 240px;
+    border-right: none;
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+}
+
+.workspace-chat-pane {
+    flex: 1 1 60%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---------- Dropzone ---------- */
+
+.workspace-dropzone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 4px;
+    padding: 24px 16px;
+    border: 1.5px dashed rgba(0, 0, 0, 0.15);
+    border-radius: 14px;
+    background: #f9fafb;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+    min-height: 200px;
+}
+
+.workspace-dropzone:hover,
+.workspace-dropzone.is-dragover {
+    border-color: #4b3fd8;
+    background: rgba(75, 63, 216, 0.04);
+}
+
+.workspace-dropzone.is-error {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.workspace-dropzone-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(75, 63, 216, 0.08);
+    color: #4b3fd8;
+    margin-bottom: 6px;
+}
+
+.workspace-dropzone-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.workspace-dropzone-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #111111;
+}
+
+.workspace-dropzone-sub {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+
+.workspace-browse-btn {
+    pointer-events: none;
+}
+
+/* ---------- File preview ---------- */
+
+.workspace-file-preview {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    border: 0.5px solid rgba(0, 0, 0, 0.12);
+    border-radius: 14px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.workspace-file-preview[hidden] {
+    display: none !important;
+}
+
+.workspace-file-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+}
+
+.workspace-file-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.workspace-remove-file-btn {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.workspace-remove-file-btn:hover {
+    color: #ef4444;
+    background-color: #fef2f2;
+}
+
+.workspace-remove-file-btn svg {
+    width: 15px;
+    height: 15px;
+}
+
+.workspace-file-preview-body {
+    flex: 1;
+    min-height: 160px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.workspace-pdf-frame {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    border: none;
+    flex: 1;
+}
+
+.workspace-text-preview {
+    margin: 0;
+    padding: 14px;
+    font-family: 'Geist Mono', 'Menlo', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #111111;
+    white-space: pre-wrap;
+    word-break: break-word;
+    flex: 1;
+}
+
+.workspace-preview-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+    padding: 24px 16px;
+    color: #6b7280;
+}
+
+.workspace-preview-placeholder-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    margin-bottom: 4px;
+}
+
+.workspace-preview-placeholder-icon svg {
+    width: 30px;
+    height: 30px;
+}
+
+.workspace-preview-placeholder p {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.workspace-preview-placeholder span {
+    font-size: 12px;
+    line-height: 1.5;
+    max-width: 220px;
+}
+
+/* ---------- Chat pane ---------- */
+
+.workspace-chat-area {
+    flex: 1;
+}
+
+.workspace-chat-empty {
+    color: #6b7280;
+    font-size: 13px;
+    text-align: center;
+    padding: 0 24px;
+}
+
+.workspace-input-hint {
+    font-size: 11px;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

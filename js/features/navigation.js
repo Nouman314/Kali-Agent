@@ -6,6 +6,7 @@ const VIEW_MAP = {
     chat: dom.chatView,
     grammar: dom.grammarView,
     agents: dom.agentsView,
+    workspace: dom.workspaceView,
 };
 
 function showView(name) {
