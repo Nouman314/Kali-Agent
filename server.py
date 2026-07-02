@@ -294,7 +294,10 @@ def chat():
 
     except Exception as e:
         print(f"[ERROR] Gemini API call failed: {e}")
-        return jsonify({"error": f"AI error: {str(e)}"}), 500
+        error_message = str(e)
+        if "image" in error_message.lower() and "does not support" in error_message.lower():
+            return jsonify({"error": "The selected model does not support image input. Please switch to a vision-capable model or remove the image attachment."}), 400
+        return jsonify({"error": f"AI error: {error_message}"}), 500
 
 
 @app.route("/grammar-fix", methods=["POST"])
@@ -390,7 +393,10 @@ def workspace_chat():
 
     except Exception as e:
         print(f"[ERROR] Gemini workspace-chat call failed: {e}")
-        return jsonify({"error": f"AI error: {str(e)}"}), 500
+        error_message = str(e)
+        if "image" in error_message.lower() and "does not support" in error_message.lower():
+            return jsonify({"error": "The selected model does not support image input. Please switch to a vision-capable model or remove the image attachment."}), 400
+        return jsonify({"error": f"AI error: {error_message}"}), 500
 
 
 @app.route("/workspace-reset", methods=["POST"])

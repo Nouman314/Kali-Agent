@@ -1,3 +1,4 @@
+import { CONFIG } from '../config.js';
 import { dom } from '../dom.js';
 import { state } from '../state.js';
 import { formatFileSize } from './attachments.js';
@@ -90,12 +91,52 @@ const TYPE_ICONS = {
         </svg>`,
 };
 
+const AGENT_ICONS = {
+    terminal: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"></polyline>
+            <line x1="12" y1="19" x2="20" y2="19"></line>
+        </svg>`,
+    shield: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>`,
+    radar: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="6"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+        </svg>`,
+    search: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>`,
+    code: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>`,
+};
+
 function getIconSvg(id) {
     return TYPE_ICONS[id] || TYPE_ICONS.txt;
 }
 
 function getTypeConfig(id) {
     return WORKSPACE_FILE_TYPES.find((type) => type.id === id);
+}
+
+function renderMarkdown(text) {
+    if (typeof marked === 'undefined') return text;
+    return marked.parse(text);
+}
+
+function highlightCodeBlocks(root) {
+    if (typeof hljs === 'undefined') return;
+    root.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightElement(block);
+    });
 }
 
 // ---------- Landing grid ----------
@@ -154,7 +195,6 @@ function openSession(typeId) {
     const type = getTypeConfig(typeId);
     if (!type) return;
 
-    // Switching to a different file type starts a fresh session.
     if (state.workspace.activeType !== typeId) {
         resetSession();
         state.workspace.activeType = typeId;
@@ -247,7 +287,6 @@ function renderPreviewBody(file, type) {
         return;
     }
 
-    // docx / ppt / xlsx: no in-browser preview yet — this is the frontend-only stub.
     dom.workspaceFilePreviewBody.innerHTML = `
         <div class="workspace-preview-placeholder">
             <div class="workspace-preview-placeholder-icon">${getIconSvg(type.id)}</div>
@@ -279,7 +318,7 @@ function renderFilePane() {
     renderPreviewBody(file, type);
 }
 
-// ---------- Chat pane (frontend-only for now) ----------
+// ---------- Chat pane ----------
 
 function escapeHtml(value) {
     return String(value)
@@ -288,9 +327,194 @@ function escapeHtml(value) {
         .replace(/>/g, '&gt;');
 }
 
-function createWorkspaceBubble(role) {
+function renderUserBubbleText(bubble, text) {
+    bubble.innerHTML = '';
+    bubble.classList.remove('has-show-more');
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'user-bubble-text';
+    textSpan.textContent = text;
+    bubble.appendChild(textSpan);
+
+    requestAnimationFrame(() => {
+        const collapseLimit = 168;
+        if (textSpan.scrollHeight > collapseLimit) {
+            bubble.classList.add('has-show-more');
+            textSpan.classList.add('is-collapsed');
+
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.className = 'show-more-btn';
+            toggleBtn.setAttribute('aria-expanded', 'false');
+            toggleBtn.innerHTML = `<span class="show-more-btn__label">See more</span>
+                <span class="show-more-btn__icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7.5 10.5L12 15l4.5-4.5"/>
+                    </svg>
+                </span>`;
+
+            bubble.appendChild(toggleBtn);
+        }
+    });
+}
+
+function createBubbleActions(role) {
+    const actions = document.createElement('div');
+    actions.className = 'bubble-actions';
+
+    if (role === 'user') {
+        actions.innerHTML = `<button type="button" title="Edit" aria-label="Edit">
+               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                   <path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />
+                   <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" />
+                   <path d="M16 5l3 3" />
+               </svg>
+           </button>
+           <button type="button" title="Copy" aria-label="Copy">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                   <rect x="9" y="9" width="13" height="13" rx="2.5" ry="2.5"></rect>
+                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+               </svg>
+           </button>`;
+        return actions;
+    }
+
+    actions.innerHTML = `<button type="button" title="Copy" aria-label="Copy">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                   <rect x="9" y="9" width="13" height="13" rx="2.5" ry="2.5"></rect>
+                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+               </svg>
+           </button>
+           <button type="button" title="Like" aria-label="Like">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                   <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+               </svg>
+           </button>
+           <button type="button" title="Dislike" aria-label="Dislike">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                   <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+               </svg>
+           </button>
+           <button type="button" title="Retry" aria-label="Retry">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                   <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                   <path d="M21 3v5h-5"></path>
+                   <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+                   <path d="M3 21v-5h5"></path>
+               </svg>
+           </button>`;
+
+    return actions;
+}
+
+function setButtonCopyFeedback(button, originalHTML) {
+    const svg = button.querySelector('svg');
+    if (!svg) return;
+
+    svg.innerHTML = '<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>';
+    svg.style.stroke = '#22c55e';
+    setTimeout(() => {
+        svg.innerHTML = originalHTML;
+        svg.style.stroke = '';
+    }, 1500);
+}
+
+function copyBubbleText(button, bubble) {
+    const text = bubble.dataset.rawText || bubble.textContent || '';
+    navigator.clipboard.writeText(text).catch(() => {});
+    const svg = button.querySelector('svg');
+    if (svg) {
+        setButtonCopyFeedback(button, svg.innerHTML);
+    }
+}
+
+function toggleBubbleLike(button, activeColor, otherSelector) {
+    const isActive = button.style.color === activeColor;
+    button.style.color = isActive ? '' : activeColor;
+
+    const wrapper = button.closest('.message-wrapper');
+    const otherButton = wrapper?.querySelector(otherSelector);
+    if (otherButton) otherButton.style.color = '';
+}
+
+function renderWorkspaceMessageBubble(bubble, role, text) {
+    bubble.dataset.rawText = text;
+
+    if (role === 'ai') {
+        bubble.innerHTML = text ? renderMarkdown(text) : '';
+        highlightCodeBlocks(bubble);
+        return;
+    }
+
+    renderUserBubbleText(bubble, text);
+}
+
+function getWorkspaceMessageIndex(wrapper) {
+    const index = Number(wrapper?.dataset.messageIndex);
+    return Number.isFinite(index) ? index : -1;
+}
+
+function trimWorkspaceMessagesFrom(index) {
+    if (index < 0) return;
+    state.workspace.messages = state.workspace.messages.slice(0, index);
+}
+
+function removeWorkspaceDomAfter(wrapper) {
+    let next = wrapper?.nextElementSibling || null;
+    while (next) {
+        const current = next;
+        next = next.nextElementSibling;
+        current.remove();
+    }
+}
+
+function restoreEditableBubble(bubble, actions, text) {
+    bubble.classList.remove('chat-bubble--editing');
+    bubble.style.width = '';
+    bubble.style.maxWidth = '80%';
+    delete bubble.dataset.editWidth;
+    bubble.dataset.rawText = text;
+    renderUserBubbleText(bubble, text);
+    actions.style.display = 'flex';
+}
+
+function ensureBubbleActions(wrapper, role) {
+    if (!wrapper || wrapper.querySelector('.bubble-actions')) return;
+    wrapper.appendChild(createBubbleActions(role));
+}
+
+function createWorkspaceBubble(role, showActions = true) {
     const wrapper = document.createElement('div');
     wrapper.className = `message-wrapper message-wrapper--${role}`;
+
+    if (role === 'ai') {
+        const agentHeader = document.createElement('div');
+        agentHeader.className = 'ai-agent-header';
+
+        const activeAgent = state.activeAgent;
+        if (activeAgent) {
+            const iconWrapper = document.createElement('div');
+            iconWrapper.className = `ai-agent-icon-wrapper ${activeAgent.icon}`;
+            iconWrapper.innerHTML = AGENT_ICONS[activeAgent.icon] || AGENT_ICONS.terminal;
+
+            const agentName = document.createElement('span');
+            agentName.textContent = activeAgent.name;
+
+            agentHeader.appendChild(iconWrapper);
+            agentHeader.appendChild(agentName);
+        } else {
+            const agentIcon = document.createElement('img');
+            agentIcon.src = chrome.runtime.getURL('icons/icon400.png');
+            agentIcon.className = 'ai-agent-icon';
+
+            const agentName = document.createElement('span');
+            agentName.textContent = 'Kali Agent';
+
+            agentHeader.appendChild(agentIcon);
+            agentHeader.appendChild(agentName);
+        }
+        wrapper.appendChild(agentHeader);
+    }
 
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble chat-bubble--${role}`;
@@ -308,6 +532,10 @@ function createWorkspaceBubble(role) {
     });
 
     wrapper.appendChild(bubble);
+    if (showActions) {
+        wrapper.appendChild(createBubbleActions(role));
+    }
+
     return { wrapper, bubble };
 }
 
@@ -341,28 +569,217 @@ function renderChatPane() {
         return;
     }
 
-    state.workspace.messages.forEach((msg) => {
-        const { wrapper, bubble } = createWorkspaceBubble(msg.role);
-        bubble.textContent = msg.text;
+    state.workspace.messages.forEach((msg, index) => {
+        const { wrapper, bubble } = createWorkspaceBubble(msg.role, msg.showActions !== false);
+        wrapper.dataset.messageIndex = String(index);
+        renderWorkspaceMessageBubble(bubble, msg.role, msg.text);
         dom.workspaceChatArea.appendChild(wrapper);
     });
 
+    highlightCodeBlocks(dom.workspaceChatArea);
     dom.workspaceChatArea.scrollTop = dom.workspaceChatArea.scrollHeight;
 }
 
-function appendLiveBubble(role, text, persist = true) {
+function handleBubbleActionClick(event) {
+    const showMoreButton = event.target.closest('.show-more-btn');
+    if (showMoreButton) {
+        const textSpan = showMoreButton.parentElement?.querySelector('.user-bubble-text');
+        if (!textSpan) return;
+
+        const collapsed = textSpan.classList.toggle('is-collapsed');
+        showMoreButton.classList.toggle('is-expanded', !collapsed);
+        showMoreButton.setAttribute('aria-expanded', String(!collapsed));
+        const label = showMoreButton.querySelector('.show-more-btn__label');
+        if (label) label.textContent = collapsed ? 'See more' : 'See less';
+        return;
+    }
+
+    const button = event.target.closest('.bubble-actions button');
+    if (!button || !dom.workspaceChatArea.contains(button)) return;
+
+    const wrapper = button.closest('.message-wrapper');
+    const bubble = wrapper?.querySelector('.chat-bubble');
+    if (!wrapper || !bubble) return;
+
+    const title = button.getAttribute('title');
+
+    if (title === 'Copy') {
+        copyBubbleText(button, bubble);
+        return;
+    }
+
+    if (title === 'Edit') {
+        if (button.classList.contains('disabled')) return;
+        beginWorkspaceBubbleEdit(wrapper, bubble, wrapper.querySelector('.bubble-actions'));
+        return;
+    }
+
+    if (title === 'Like') {
+        toggleBubbleLike(button, '#4b3fd8', '[title="Dislike"]');
+        return;
+    }
+
+    if (title === 'Dislike') {
+        toggleBubbleLike(button, '#ef4444', '[title="Like"]');
+        return;
+    }
+
+    if (title === 'Retry') {
+        const svg = button.querySelector('svg');
+        if (svg) {
+            svg.classList.add('spin-once');
+            svg.addEventListener('animationend', () => svg.classList.remove('spin-once'), { once: true });
+        }
+
+        retryWorkspaceLastMessage();
+    }
+}
+
+function beginWorkspaceBubbleEdit(wrapper, bubble, actions) {
+    if (state.workspace.isSending) return;
+
+    actions.style.display = 'none';
+    const currentText = bubble.dataset.rawText || bubble.textContent || '';
+    const messageIndex = getWorkspaceMessageIndex(wrapper);
+    const bubbleWidth = Math.max(280, Math.ceil(bubble.getBoundingClientRect().width));
+
+    bubble.classList.add('chat-bubble--editing');
+    bubble.dataset.editWidth = `${bubbleWidth}px`;
+    bubble.style.width = bubble.dataset.editWidth;
+    bubble.style.maxWidth = bubble.dataset.editWidth;
+    bubble.textContent = '';
+
+    const editContainer = document.createElement('div');
+    editContainer.className = 'edit-container';
+    editContainer.innerHTML = `
+        <textarea class="edit-textarea"></textarea>
+        <div class="edit-actions">
+            <button type="button" class="edit-btn edit-btn-cancel">Cancel</button>
+            <button type="button" class="edit-btn edit-btn-save">Save & Send</button>
+        </div>
+    `;
+    bubble.appendChild(editContainer);
+
+    const textarea = editContainer.querySelector('.edit-textarea');
+    textarea.value = currentText;
+    textarea.focus();
+    textarea.style.height = textarea.scrollHeight + 'px';
+
+    textarea.addEventListener('input', () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+    });
+
+    editContainer.querySelector('.edit-btn-cancel').addEventListener('click', () => {
+        restoreEditableBubble(bubble, actions, currentText);
+    });
+
+    editContainer.querySelector('.edit-btn-save').addEventListener('click', () => {
+        const newText = textarea.value.trim();
+        if (!newText) return;
+
+        bubble.dataset.rawText = newText;
+        restoreEditableBubble(bubble, actions, newText);
+
+        if (messageIndex >= 0 && state.workspace.messages[messageIndex]) {
+            state.workspace.messages[messageIndex].text = newText;
+            state.workspace.messages[messageIndex].showActions = true;
+            trimWorkspaceMessagesFrom(messageIndex + 1);
+        }
+
+        removeWorkspaceDomAfter(wrapper);
+        requestWorkspaceResponse(newText);
+    });
+}
+
+function retryWorkspaceLastMessage() {
+    const userWrappers = dom.workspaceChatArea?.querySelectorAll('.message-wrapper--user');
+    const lastUserWrapper = userWrappers?.[userWrappers.length - 1];
+    const lastUserBubble = lastUserWrapper?.querySelector('.chat-bubble');
+    const lastUserText = lastUserBubble?.dataset.rawText || lastUserBubble?.textContent;
+    if (!lastUserText || !lastUserWrapper) return;
+
+    const lastUserIndex = getWorkspaceMessageIndex(lastUserWrapper);
+    trimWorkspaceMessagesFrom(lastUserIndex);
+    removeWorkspaceDomAfter(lastUserWrapper);
+    lastUserWrapper.remove();
+
+    appendLiveBubble('user', lastUserText);
+    requestWorkspaceResponse(lastUserText);
+}
+
+async function requestWorkspaceResponse(text) {
+    const aiBubble = appendLiveBubble('ai', '', false, false);
+    if (!aiBubble) return false;
+
+    state.workspace.isSending = true;
+    if (dom.workspaceSendBtn) dom.workspaceSendBtn.disabled = true;
+
+    dom.workspaceChatArea.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach((btn) => {
+        btn.classList.add('disabled');
+    });
+
+    aiBubble.innerHTML = '<span class="shimmer-text">Thinking...</span>';
+
+    try {
+        const { data, ok } = await sendWorkspaceChatRequest({
+            message: text,
+            model: state.currentModel,
+            file: state.workspace.fileSent ? null : state.workspace.file,
+        });
+
+        if (!ok) {
+            const errorText = data.error || 'Something went wrong. Please try again.';
+            aiBubble.textContent = errorText;
+            state.workspace.messages.push({ role: 'ai', text: errorText, showActions: false });
+            return false;
+        }
+
+        state.workspace.fileSent = true;
+        const reply = data.reply || "I couldn't find anything to say about that.";
+        aiBubble.innerHTML = renderMarkdown(reply);
+        aiBubble.dataset.rawText = reply;
+        highlightCodeBlocks(aiBubble);
+
+        const aiWrapper = aiBubble.closest('.message-wrapper');
+        ensureBubbleActions(aiWrapper, 'ai');
+
+        state.workspace.messages.push({ role: 'ai', text: reply, showActions: true });
+        return true;
+    } catch (err) {
+        const errorText = 'Could not reach the backend. Is server.py running?';
+        aiBubble.textContent = errorText;
+        state.workspace.messages.push({ role: 'ai', text: errorText, showActions: false });
+        console.error('[Kali Agent] Workspace chat error:', err);
+        return false;
+    } finally {
+        state.workspace.isSending = false;
+        if (dom.workspaceSendBtn) dom.workspaceSendBtn.disabled = !state.workspace.file;
+
+        if (dom.workspaceChatArea) {
+            dom.workspaceChatArea.scrollTop = dom.workspaceChatArea.scrollHeight;
+        }
+
+        dom.workspaceChatArea.querySelectorAll('.message-wrapper--user .bubble-actions button[title="Edit"]').forEach((btn) => {
+            btn.classList.remove('disabled');
+        });
+    }
+}
+
+function appendLiveBubble(role, text, persist = true, showActions = role === 'user') {
     if (!dom.workspaceChatArea) return null;
 
     const emptyState = dom.workspaceChatArea.querySelector('.workspace-chat-empty');
     if (emptyState) emptyState.closest('.empty-state')?.remove();
 
-    const { wrapper, bubble } = createWorkspaceBubble(role);
-    bubble.textContent = text;
+    const { wrapper, bubble } = createWorkspaceBubble(role, showActions);
+    wrapper.dataset.messageIndex = String(state.workspace.messages.length);
+    renderWorkspaceMessageBubble(bubble, role, text);
     dom.workspaceChatArea.appendChild(wrapper);
     dom.workspaceChatArea.scrollTop = dom.workspaceChatArea.scrollHeight;
 
     if (persist) {
-        state.workspace.messages.push({ role, text });
+        state.workspace.messages.push({ role, text, showActions });
     }
 
     return bubble;
@@ -378,42 +795,7 @@ async function handleWorkspaceSend() {
     dom.workspaceChatInput.style.height = 'auto';
 
     appendLiveBubble('user', text);
-
-    const thinkingBubble = appendLiveBubble('ai', '', false);
-    if (thinkingBubble) thinkingBubble.innerHTML = '<span class="shimmer-text">Thinking...</span>';
-
-    state.workspace.isSending = true;
-    if (dom.workspaceSendBtn) dom.workspaceSendBtn.disabled = true;
-
-    try {
-        const { data, ok } = await sendWorkspaceChatRequest({
-            message: text,
-            model: state.currentModel,
-            // Only the first message needs to carry the file — the backend
-            // keeps it in the document's own conversation history after that.
-            file: state.workspace.fileSent ? null : state.workspace.file,
-        });
-
-        if (!ok) {
-            const errorText = data.error || 'Something went wrong. Please try again.';
-            if (thinkingBubble) thinkingBubble.textContent = errorText;
-            state.workspace.messages.push({ role: 'ai', text: errorText });
-            return;
-        }
-
-        state.workspace.fileSent = true;
-        const reply = data.reply || "I couldn't find anything to say about that.";
-        if (thinkingBubble) thinkingBubble.textContent = reply;
-        state.workspace.messages.push({ role: 'ai', text: reply });
-    } catch (err) {
-        const errorText = 'Could not reach the backend. Is server.py running?';
-        if (thinkingBubble) thinkingBubble.textContent = errorText;
-        state.workspace.messages.push({ role: 'ai', text: errorText });
-        console.error('[Kali Agent] Workspace chat error:', err);
-    } finally {
-        state.workspace.isSending = false;
-        if (dom.workspaceSendBtn) dom.workspaceSendBtn.disabled = !state.workspace.file;
-    }
+    requestWorkspaceResponse(text);
 }
 
 // ---------- Bindings ----------
@@ -475,7 +857,48 @@ export function bindWorkspaceInteractions() {
 
     dom.workspaceSendBtn?.addEventListener('click', handleWorkspaceSend);
 
-    // Collapse the split view to a stacked layout when the panel gets narrow.
+    dom.workspaceChatArea?.addEventListener('click', handleBubbleActionClick);
+
+    const workspaceInputWrapper = dom.workspaceChatInput?.closest('.input-box-wrapper');
+    if (workspaceInputWrapper && dom.workspaceChatInput) {
+        const updateResizeCursor = (event) => {
+            if (state.isResizing) return;
+
+            const isTopEdge = event.clientY - workspaceInputWrapper.getBoundingClientRect().top < 8;
+            const cursor = isTopEdge ? 'ns-resize' : 'text';
+            workspaceInputWrapper.style.cursor = cursor;
+            dom.workspaceChatInput.style.cursor = cursor;
+        };
+
+        const tryStartResize = (event) => {
+            const isTopEdge = event.clientY - workspaceInputWrapper.getBoundingClientRect().top < 8;
+            if (!isTopEdge) return;
+
+            state.isResizing = true;
+            state.startY = event.clientY;
+            state.startHeight = dom.workspaceChatInput.getBoundingClientRect().height;
+            event.preventDefault();
+        };
+
+        workspaceInputWrapper.addEventListener('mousemove', updateResizeCursor);
+        dom.workspaceChatInput.addEventListener('mousemove', updateResizeCursor);
+        workspaceInputWrapper.addEventListener('mousedown', tryStartResize);
+        dom.workspaceChatInput.addEventListener('mousedown', tryStartResize);
+    }
+
+    document.addEventListener('mousemove', (event) => {
+        if (!state.isResizing || !dom.workspaceChatInput) return;
+        const newHeight = Math.min(
+            CONFIG.COMPOSER.MAX_INPUT_HEIGHT,
+            Math.max(CONFIG.COMPOSER.MIN_INPUT_HEIGHT, state.startHeight + (state.startY - event.clientY))
+        );
+        dom.workspaceChatInput.style.height = `${newHeight}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+        state.isResizing = false;
+    });
+
     if (dom.workspaceSplit && 'ResizeObserver' in window) {
         const observer = new ResizeObserver((entries) => {
             entries.forEach((entry) => {
