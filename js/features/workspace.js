@@ -1,6 +1,7 @@
 import { dom } from '../dom.js';
 import { state } from '../state.js';
 import { formatFileSize } from './attachments.js';
+import { formatCleanText } from '../utils/textFormat.js';
 
 let workspaceBound = false;
 
@@ -224,18 +225,19 @@ function renderPreviewBody(file, type) {
     }
 
     if (type.id === 'txt' || type.id === 'md') {
-        const pre = document.createElement('pre');
-        pre.className = 'workspace-text-preview';
-        pre.textContent = 'Loading preview…';
-        dom.workspaceFilePreviewBody.appendChild(pre);
+        const clean = document.createElement('div');
+        clean.className = 'workspace-clean-preview';
+        clean.innerHTML = '<p class="grammar-clean-paragraph">Loading preview…</p>';
+        dom.workspaceFilePreviewBody.appendChild(clean);
 
         const reader = new FileReader();
         reader.onload = () => {
-            state.workspace.fileTextContent = reader.result;
-            pre.textContent = reader.result;
+            const raw = typeof reader.result === 'string' ? reader.result : '';
+            state.workspace.fileTextContent = raw;
+            clean.innerHTML = formatCleanText(raw) || '<p class="grammar-clean-paragraph">This file is empty.</p>';
         };
         reader.onerror = () => {
-            pre.textContent = 'Could not read this file for preview.';
+            clean.innerHTML = '<p class="grammar-clean-paragraph">Could not read this file for preview.</p>';
         };
         reader.readAsText(file);
         return;

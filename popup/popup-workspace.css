@@ -165,16 +165,21 @@
 }
 
 .workspace-file-pane {
-    flex: 0 0 40%;
-    min-width: 180px;
-    max-width: 320px;
+    flex: 0 0 46%;
+    min-width: 220px;
+    max-width: 440px;
     border-right: 0.5px solid rgba(0, 0, 0, 0.1);
     padding: 16px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    gap: 16px;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.workspace-file-pane[hidden] {
+    display: none !important;
 }
 
 .workspace-split.is-stacked .workspace-file-pane {
@@ -209,6 +214,10 @@
     cursor: pointer;
     transition: border-color 0.15s, background-color 0.15s;
     min-height: 200px;
+}
+
+.workspace-dropzone[hidden] {
+    display: none !important;
 }
 
 .workspace-dropzone:hover,
@@ -329,14 +338,11 @@
     flex: 1;
 }
 
-.workspace-text-preview {
-    margin: 0;
-    padding: 14px;
-    font-family: 'Geist Mono', 'Menlo', monospace;
-    font-size: 12.5px;
-    line-height: 1.6;
+.workspace-clean-preview {
+    padding: 14px 16px;
+    font-size: 13.5px;
+    line-height: 1.65;
     color: #111111;
-    white-space: pre-wrap;
     word-break: break-word;
     flex: 1;
 }
@@ -393,10 +399,8 @@
     padding: 0 24px;
 }
 
-.workspace-input-hint {
-    font-size: 11px;
-    color: #9ca3af;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+/* The input footer used to also hold a "Frontend preview" hint label.
+   Now it only has the send button, so pin it to the right. */
+.workspace-input-area .input-footer {
+    justify-content: flex-end;
 }
