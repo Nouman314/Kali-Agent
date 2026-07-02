@@ -2,6 +2,7 @@ import { dom } from '../dom.js';
 import { state } from '../state.js';
 import { formatFileSize } from './attachments.js';
 import { formatCleanText } from '../utils/textFormat.js';
+import { sendWorkspaceChatRequest, resetWorkspaceSession } from '../services/chatApi.js';
 
 let workspaceBound = false;
 
@@ -144,6 +145,9 @@ function resetSession() {
     state.workspace.fileTextContent = null;
     state.workspace.previewUrl = null;
     state.workspace.messages = [];
+    state.workspace.fileSent = false;
+    state.workspace.isSending = false;
+    resetWorkspaceSession();
 }
 
 function openSession(typeId) {
@@ -364,8 +368,8 @@ function appendLiveBubble(role, text, persist = true) {
     return bubble;
 }
 
-function handleWorkspaceSend() {
-    if (!dom.workspaceChatInput || !state.workspace.file) return;
+async function handleWorkspaceSend() {
+    if (!dom.workspaceChatInput || !state.workspace.file || state.workspace.isSending) return;
 
     const text = dom.workspaceChatInput.value.trim();
     if (!text) return;
@@ -375,22 +379,41 @@ function handleWorkspaceSend() {
 
     appendLiveBubble('user', text);
 
-    // TODO(backend): once server.py exposes a document-chat endpoint, replace this
-    // block with something like:
-    //   sendChatRequest({
-    //     message: text,
-    //     model: state.currentModel,
-    //     attachments: [{ file: state.workspace.file }],
-    //     systemInstruction: `Answer questions using only the attached document: ${state.workspace.file.name}`,
-    //   })
     const thinkingBubble = appendLiveBubble('ai', '', false);
     if (thinkingBubble) thinkingBubble.innerHTML = '<span class="shimmer-text">Thinking...</span>';
 
-    setTimeout(() => {
-        const reply = `This is a frontend preview — once the backend is connected, I'll read "${state.workspace.file.name}" and answer based on its actual contents.`;
+    state.workspace.isSending = true;
+    if (dom.workspaceSendBtn) dom.workspaceSendBtn.disabled = true;
+
+    try {
+        const { data, ok } = await sendWorkspaceChatRequest({
+            message: text,
+            model: state.currentModel,
+            // Only the first message needs to carry the file — the backend
+            // keeps it in the document's own conversation history after that.
+            file: state.workspace.fileSent ? null : state.workspace.file,
+        });
+
+        if (!ok) {
+            const errorText = data.error || 'Something went wrong. Please try again.';
+            if (thinkingBubble) thinkingBubble.textContent = errorText;
+            state.workspace.messages.push({ role: 'ai', text: errorText });
+            return;
+        }
+
+        state.workspace.fileSent = true;
+        const reply = data.reply || "I couldn't find anything to say about that.";
         if (thinkingBubble) thinkingBubble.textContent = reply;
         state.workspace.messages.push({ role: 'ai', text: reply });
-    }, 700);
+    } catch (err) {
+        const errorText = 'Could not reach the backend. Is server.py running?';
+        if (thinkingBubble) thinkingBubble.textContent = errorText;
+        state.workspace.messages.push({ role: 'ai', text: errorText });
+        console.error('[Kali Agent] Workspace chat error:', err);
+    } finally {
+        state.workspace.isSending = false;
+        if (dom.workspaceSendBtn) dom.workspaceSendBtn.disabled = !state.workspace.file;
+    }
 }
 
 // ---------- Bindings ----------

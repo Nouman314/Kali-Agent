@@ -68,3 +68,34 @@ export async function sendGrammarFixRequest({ text, signal }) {
         ok: response.ok && !data.error,
     };
 }
+
+export async function sendWorkspaceChatRequest({ message, model, file, signal }) {
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('model', model);
+
+    if (file) {
+        formData.append('attachments', file, file.name);
+    }
+
+    const response = await fetch(CONFIG.ENDPOINTS.WORKSPACE_CHAT, {
+        method: 'POST',
+        body: formData,
+        signal,
+    });
+
+    const data = await readJsonResponse(response);
+    return {
+        response,
+        data,
+        ok: response.ok && !data.error,
+    };
+}
+
+export async function resetWorkspaceSession() {
+    try {
+        await fetch(CONFIG.ENDPOINTS.WORKSPACE_RESET, { method: 'POST' });
+    } catch {
+        // Reset is best-effort.
+    }
+}

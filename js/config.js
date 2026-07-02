@@ -3,6 +3,8 @@ export const CONFIG = {
         CHAT: 'http://localhost:5000/chat',
         RESET: 'http://localhost:5000/reset',
         GRAMMAR: 'http://localhost:5000/grammar-fix',
+        WORKSPACE_CHAT: 'http://localhost:5000/workspace-chat',
+        WORKSPACE_RESET: 'http://localhost:5000/workspace-reset',
     },
     MODELS: {
         DEFAULT: 'gemini-3.1-flash-lite',
