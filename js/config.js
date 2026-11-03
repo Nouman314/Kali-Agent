@@ -7,22 +7,27 @@ export const CONFIG = {
         WORKSPACE_RESET: 'http://localhost:5000/workspace-reset',
     },
     MODELS: {
-        DEFAULT: 'gemini-3.1-flash-lite',
+        DEFAULT: 'gemini-3.8-flash',
         OPTIONS: [
             {
-                value: 'gemini-2.5-flash',
-                label: 'Gemini 2.5 Flash',
+                value: 'gemini-4-argon',
+                label: 'Gemini 4 Argon',
                 accent: '#4b3fd8',
+            },
+            {
+                value: 'gemini-3.8-flash',
+                label: 'Gemini 3.8 Flash',
+                accent: '#8b5cf6',
+            },
+            {
+                value: 'gemini-3.6-flash',
+                label: 'Gemini 3.6 Flash',
+                accent: '#10b981',
             },
             {
                 value: 'gemini-3.1-flash-lite',
                 label: 'Gemini 3.1 Flash-Lite',
-                accent: '#8b5cf6',
-            },
-            {
-                value: 'gemini-2.5-flash-lite',
-                label: 'Gemini 2.5 Flash-Lite',
-                accent: '#10b981',
+                accent: '#f59e0b',
             },
         ],
     },

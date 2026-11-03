@@ -112,7 +112,7 @@ Usage
 * Open the extension side panel.
 * Enter a message and submit it.
 * Use the plus button to attach up to 5 files per message.
-* Optionally select a Gemini model.
+* Choose a model: Gemini 4 Argon, Gemini 3.8 Flash (default), Gemini 3.6 Flash, or Gemini 3.1 Flash-Lite.
 * Use message actions to retry, edit, copy, or provide feedback.
 
 ---
@@ -127,7 +127,7 @@ Request:
 
 {
   "message": "Hello",
-  "model": "gemini-2.5-flash"
+  "model": "gemini-3.8-flash"
 }
 
 Multipart form-data is also supported for attachments:
@@ -165,7 +165,7 @@ Example response:
 
 {
   "status": "ok",
-  "model": "gemini-2.5-flash"
+  "model": "gemini-3.8-flash"
 }
 
 ---
