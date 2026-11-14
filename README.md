@@ -19,6 +19,7 @@ Features
 * Model selection for different Gemini variants
 * Message actions include retry, copy, edit, Like/Dislike feedback, and auto-collapsing "Show more" for long user messages.
 * Attach PDFs, DOCX, PPTX, and common image files from the composer
+* Notes library with folders, search, sorting, pinning, archiving, rich-text editing, and Markdown/PDF export
 * Local Flask backend with CORS support
 
 ---
@@ -32,7 +33,8 @@ Project Structure
 ├── popup/
 │   ├── popup-base.css
 │   ├── popup-chat.css
-│   └── popup-input.css
+│   ├── popup-input.css
+│   └── popup-notes.css
 ├── server.py
 ├── requirements.txt
 ├── icons/
@@ -50,6 +52,7 @@ Project Structure
 │   └── features/
 │       ├── attachments.js
 │       ├── composer.js
+│       ├── notes.js
 │       ├── messages.js
 │       └── navigation.js
 └── README.md
@@ -111,6 +114,7 @@ Usage
 
 * Open the extension side panel.
 * Enter a message and submit it.
+* Open Notes to create and organize notes. Notes are saved in the browser's local extension storage.
 * Use the plus button to attach up to 5 files per message.
 * Choose a model: Gemini 4 Argon, Gemini 3.8 Flash (default), Gemini 3.6 Flash, or Gemini 3.1 Flash-Lite.
 * Use message actions to retry, edit, copy, or provide feedback.

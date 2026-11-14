@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="popup/popup-views.css">
     <link rel="stylesheet" href="popup/popup-agents.css">
     <link rel="stylesheet" href="popup/popup-workspace.css">
+    <link rel="stylesheet" href="popup/popup-notes.css">
     <link rel="stylesheet" href="github.min.css">
     <script src="marked.min.js"></script>
     <script src="highlight.min.js"></script>
@@ -164,31 +165,162 @@
                 </div>
             </div>
 
-            <div class="agents-view" id="agentsView" hidden>
-                <div class="agents-hero">
-                    <h2>AI Agents</h2>
-                    <p class="agents-subtitle">Deploy specialized assistants with tailored knowledge and capabilities for cyber operations.</p>
-                </div>
-
-                <div class="agents-toolbar">
-                    <div class="agents-search-wrapper">
-                        <svg class="agents-search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                        <input type="text" id="agentsSearch" class="agents-search-input" placeholder="Search agents...">
+            <div class="notes-view" id="notesView" hidden>
+                <header class="notes-header">
+                    <div class="notes-heading">
+                        <h1>Notes</h1>
+                        <span class="notes-total" id="notesTotal">4 notes</span>
                     </div>
-                    <button class="create-agent-btn" id="createAgentBtn" type="button">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Create Agent
-                    </button>
-                </div>
+                    <div class="notes-header-actions">
+                        <label class="notes-search">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            <input id="notesSearch" type="search" placeholder="Search notes" aria-label="Search notes">
+                        </label>
+                        <label class="notes-sort-label" for="notesSort">Sort</label>
+                        <select class="notes-sort" id="notesSort" aria-label="Sort notes">
+                            <option value="recent">Recent</option>
+                            <option value="oldest">Oldest</option>
+                            <option value="title">Title</option>
+                        </select>
+                        <button class="notes-new-btn" id="newNoteBtn" type="button">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                                <path d="M12 5v14M5 12h14"></path>
+                            </svg>
+                            <span>New note</span>
+                        </button>
+                    </div>
+                </header>
 
-                <div class="agents-grid" id="agentsGrid">
-                    <!-- Agent cards will be dynamically injected here -->
+                <div class="notes-layout">
+                    <aside class="notes-folders" aria-label="Note folders">
+                        <p class="notes-section-label">LIBRARY</p>
+                        <button class="notes-folder is-active" type="button" data-folder="all" aria-pressed="true">
+                            <span class="notes-folder-name">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10l2 2h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path>
+                                </svg>
+                                All notes
+                            </span>
+                            <span class="notes-folder-count" data-count="all">4</span>
+                        </button>
+                        <button class="notes-folder" type="button" data-folder="chat" aria-pressed="false">
+                            <span class="notes-folder-name">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2 1-4a7.5 7.5 0 1 1 16-5.5z"></path>
+                                </svg>
+                                Saved from chat
+                            </span>
+                            <span class="notes-folder-count" data-count="chat">2</span>
+                        </button>
+                        <button class="notes-folder" type="button" data-folder="study" aria-pressed="false">
+                            <span class="notes-folder-name">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10l2 2h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path>
+                                </svg>
+                                Study
+                            </span>
+                            <span class="notes-folder-count" data-count="study">1</span>
+                        </button>
+                        <button class="notes-folder" type="button" data-folder="work" aria-pressed="false">
+                            <span class="notes-folder-name">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10l2 2h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path>
+                                </svg>
+                                Work
+                            </span>
+                            <span class="notes-folder-count" data-count="work">2</span>
+                        </button>
+                        <button class="notes-folder" type="button" data-folder="archived" aria-pressed="false">
+                            <span class="notes-folder-name">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M3 5h18v4H3zM5 9v10h14V9M10 13h4"></path>
+                                </svg>
+                                Archived
+                            </span>
+                            <span class="notes-folder-count" data-count="archived">1</span>
+                        </button>
+
+                        <div class="notes-folder-tip">
+                            <span class="notes-tip-icon">✦</span>
+                            <strong>Your ideas, in one place</strong>
+                            <span>Save helpful moments from your chats and the web.</span>
+                        </div>
+                    </aside>
+
+                    <section class="notes-list-pane" aria-label="Notes list">
+                        <div class="notes-list-heading">
+                            <div>
+                                <h2 id="notesFolderTitle">All notes</h2>
+                                <p id="notesListDescription">Your recent notes in one place</p>
+                            </div>
+                        </div>
+                        <div class="notes-cards" id="notesCards" aria-live="polite"></div>
+                    </section>
+
+                    <section class="notes-editor-pane" id="notesEditorPane" aria-label="Note editor">
+                        <div class="notes-editor-topbar">
+                            <button class="notes-back-btn" id="notesBackBtn" type="button" aria-label="Back to notes">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="m15 18-6-6 6-6"></path>
+                                </svg>
+                                Notes
+                            </button>
+                            <div class="notes-editor-meta">
+                                <span class="notes-source-label" id="notesEditorSource">Saved from chat</span>
+                                <button class="notes-icon-action" id="notesPinBtn" type="button" aria-label="Pin note" title="Pin note">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="m16 3 5 5-4 1-4 4 3 3-2 2-4-4-5 5"></path>
+                                        <path d="m8 8 4 4"></path>
+                                    </svg>
+                                </button>
+                                <button class="notes-icon-action notes-archive-action" id="notesArchiveBtn" type="button" aria-label="Archive note" title="Archive note">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 5h18v4H3zM5 9v10h14V9M10 13h4"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <input class="notes-title-input" id="notesTitleInput" type="text" placeholder="Untitled note" aria-label="Note title" maxlength="120">
+                        <div class="notes-editor-toolbar" role="toolbar" aria-label="Text formatting">
+                            <button type="button" data-format="bold" aria-label="Bold" title="Bold"><strong>B</strong></button>
+                            <button type="button" data-format="italic" aria-label="Italic" title="Italic"><em>I</em></button>
+                            <span class="notes-toolbar-divider"></span>
+                            <button type="button" data-format="heading" aria-label="Heading" title="Heading">H<sub>2</sub></button>
+                            <button type="button" data-format="bullet" aria-label="Bullet list" title="Bullet list">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"></path><path d="M4 6h.01M4 12h.01M4 18h.01"></path></svg>
+                            </button>
+                            <button type="button" data-format="checklist" aria-label="Checkbox list" title="Checkbox list">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 6 1.5 1.5L8 5"></path><path d="M11 6h9M4 13h5M11 13h9M4 20h5M11 20h9"></path><path d="M4 13h.01M4 20h.01"></path></svg>
+                            </button>
+                            <button type="button" data-format="highlight" aria-label="Highlight" title="Highlight">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 11 4 4M5 20h14M7 16l8-8 4 4-8 8H7zM14 5l2-2 5 5-2 2"></path></svg>
+                            </button>
+                            <button type="button" data-format="link" aria-label="Insert link" title="Insert link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3A5 5 0 0 0 13.46 3l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3A5 5 0 0 0 10.54 21l1.71-1.71"></path></svg>
+                            </button>
+                            <span class="notes-toolbar-spacer"></span>
+                            <button class="notes-summarize-btn" id="notesSummarizeBtn" type="button">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-2-5.8L4 11l6-2.2L12 3z"></path><path d="m19 14 1.1 2.9L23 18l-2.9 1.1L19 22l-1.1-2.9L15 18l2.9-1.1L19 14z"></path></svg>
+                                <span>AI Summarize</span>
+                            </button>
+                        </div>
+                        <div class="notes-editor-body" id="notesEditorBody" contenteditable="true" role="textbox" aria-label="Note content" aria-multiline="true" spellcheck="true"></div>
+                        <footer class="notes-editor-footer">
+                            <span class="notes-saved-status"><span class="notes-saved-dot"></span><span id="notesSaveStatus">Saved</span></span>
+                            <span class="notes-word-count" id="notesWordCount">0 words</span>
+                            <span class="notes-footer-spacer"></span>
+                            <label class="notes-export-label" for="notesExport">Export</label>
+                            <select class="notes-export-select" id="notesExport" aria-label="Export note">
+                                <option value="">Choose format</option>
+                                <option value="md">Markdown</option>
+                                <option value="pdf">PDF</option>
+                                <option value="docx">DOCX</option>
+                            </select>
+                        </footer>
+                    </section>
                 </div>
             </div>
 
@@ -313,17 +445,13 @@
                 <span class="nav-label">Grammar</span>
             </div>
 
-            <!-- 3. Agents -->
-            <div class="nav-item" role="button" tabindex="0" data-nav-item="agents">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12 2v4" />
-                    <path d="M9 4h6" />
-                    <rect x="5" y="8" width="14" height="10" rx="2" />
-                    <path d="M9 13h.01M15 13h.01" />
-                    <path d="M8 18v2M16 18v2" />
-                    <path d="M5 13H3M19 13h2" />
+            <!-- 3. Notes -->
+            <div class="nav-item" role="button" tabindex="0" data-nav-item="notes">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <path d="M14 2v6h6M8 13h8M8 17h8"></path>
                 </svg>
-                <span class="nav-label">Agents</span>
+                <span class="nav-label">Notes</span>
             </div>
 
 <!-- 4. Workspace -->
@@ -461,7 +589,7 @@
     </template>
 
     <!-- Delete Confirm Modal -->
-    <div class="modal-overlay" id="deleteConfirmModal">
+    <div class="modal-overlay" id="deleteConfirmModal" hidden aria-hidden="true" style="display: none;">
         <div class="modal-content modal-content--sm">
             <div class="modal-header">
                 <h3>Delete Agent</h3>
@@ -483,7 +611,7 @@
     </div>
 
     <!-- Create Custom Agent Modal -->
-    <div class="modal-overlay" id="agentModal">
+    <div class="modal-overlay" id="agentModal" hidden aria-hidden="true" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Create Custom Agent</h3>

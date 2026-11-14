@@ -6,6 +6,7 @@ import { bindChatInteractions, renderEmptyState, resetComposerHeight } from './f
 import { bindNavigation } from './features/navigation.js';
 import { bindAgentsInteractions } from './features/agents.js';
 import { bindWorkspaceInteractions } from './features/workspace.js';
+import { bindNotesInteractions } from './features/notes.js';
 
 configureMarkdownRenderer();
 bindAttachmentTrayInteractions();
@@ -15,5 +16,6 @@ bindGrammarInteractions();
 bindNavigation();
 bindAgentsInteractions();
 bindWorkspaceInteractions();
+bindNotesInteractions();
 resetComposerHeight();
 renderEmptyState();
