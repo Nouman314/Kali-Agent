@@ -593,6 +593,11 @@
     color: #c2414b;
 }
 
+.notes-archive-action.is-active {
+    background: #efedff;
+    color: #4b3fd8;
+}
+
 .notes-icon-action svg {
     width: 15px;
     height: 15px;
@@ -773,12 +778,25 @@
     font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+.notes-summarize-btn:disabled {
+    opacity: 0.72;
+    cursor: wait;
+}
+
+.notes-summarize-btn.is-loading svg {
+    animation: notes-summarize-spin 1.1s linear infinite;
 }
 
 .notes-summarize-btn svg {
     width: 13px !important;
     height: 13px !important;
+}
+
+@keyframes notes-summarize-spin {
+    to { transform: rotate(360deg); }
 }
 
 .notes-editor-body {
@@ -813,6 +831,27 @@
 
 .notes-editor-body p {
     margin: 0 0 12px;
+}
+
+.notes-summary-draft {
+    margin: 0 0 20px;
+    padding: 13px 15px 3px;
+    border: 1px solid #e9e6ff;
+    border-radius: 10px;
+    background: #faf9ff;
+}
+
+.notes-editor-body .notes-summary-draft h2 {
+    margin-bottom: 7px;
+    color: #5147a9;
+    font-size: 12px;
+    letter-spacing: 0;
+}
+
+.notes-editor-body .notes-summary-draft p {
+    color: #5b5968;
+    font-size: 12px;
+    white-space: pre-line;
 }
 
 .notes-editor-body ul,
@@ -1158,7 +1197,7 @@
     .notes-summarize-btn {
         gap: 4px;
         padding: 0 7px;
-        font-size: 9px;
+        font-size: 10px;
     }
 
     .notes-editor-body {

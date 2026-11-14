@@ -1,3 +1,6 @@
+import { state } from '../state.js';
+import { sendChatRequest } from '../services/chatApi.js';
+
 const STORAGE_KEY = 'kali_notes';
 const STARTER_NOTE_IDS = new Set([
     'cell-biology-review',
@@ -25,7 +28,9 @@ let notes = loadNotes();
 let activeFolder = 'all';
 let selectedNoteId = null;
 let saveTimer = null;
+let statusTimer = null;
 let notesBound = false;
+let summaryRequestId = 0;
 
 const elements = {
     view: document.querySelector('#notesView'),
@@ -52,6 +57,7 @@ const elements = {
     editor: document.querySelector('#notesEditorBody'),
     toolbar: document.querySelector('.notes-editor-toolbar'),
     summarizeButton: document.querySelector('#notesSummarizeBtn'),
+    summarizeLabel: document.querySelector('#notesSummarizeBtn span'),
     saveStatus: document.querySelector('#notesSaveStatus'),
     wordCount: document.querySelector('#notesWordCount'),
     export: document.querySelector('#notesExport'),
@@ -121,15 +127,29 @@ function sanitizeContent(html) {
 }
 
 function persistNotes() {
+    window.clearTimeout(statusTimer);
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
         elements.saveStatus.textContent = 'Saved';
         elements.saveStatus.parentElement.classList.remove('is-error');
+        return true;
     } catch (error) {
         console.error('[Kali Agent] Failed to save notes:', error);
         elements.saveStatus.textContent = 'Not saved';
         elements.saveStatus.parentElement.classList.add('is-error');
+        return false;
     }
+}
+
+function showTransientStatus(message, isError = false) {
+    window.clearTimeout(statusTimer);
+    elements.saveStatus.textContent = message;
+    elements.saveStatus.parentElement.classList.toggle('is-error', isError);
+    statusTimer = window.setTimeout(() => {
+        if (elements.saveStatus.textContent !== message) return;
+        elements.saveStatus.textContent = 'Saved';
+        elements.saveStatus.parentElement.classList.remove('is-error');
+    }, 3200);
 }
 
 function escapeHtml(value) {
@@ -255,6 +275,8 @@ function renderEditor() {
     const note = notes.find((entry) => entry.id === selectedNoteId);
     if (!note) return clearEditor();
 
+    summaryRequestId += 1;
+    setSummaryButtonBusy(false);
     elements.editorPane.classList.add('has-note');
     elements.title.value = note.title;
     elements.editor.innerHTML = sanitizeContent(note.content);
@@ -263,18 +285,30 @@ function renderEditor() {
     elements.pinButton.setAttribute('aria-pressed', String(note.pinned));
     elements.pinButton.setAttribute('aria-label', note.pinned ? 'Unpin note' : 'Pin note');
     elements.pinButton.title = note.pinned ? 'Unpin note' : 'Pin note';
+    elements.archiveButton.classList.toggle('is-active', note.archived);
     elements.archiveButton.setAttribute('aria-label', note.archived ? 'Restore note' : 'Archive note');
     elements.archiveButton.title = note.archived ? 'Restore note' : 'Archive note';
+    elements.archiveButton.setAttribute('aria-pressed', String(note.archived));
+    const archiveIcon = elements.archiveButton.querySelector('svg');
+    archiveIcon.innerHTML = note.archived
+        ? '<path d="M3 5h18v4H3zM5 9v10h14V9"></path><path d="M12 17v-7m-3 3 3-3 3 3"></path>'
+        : '<path d="M3 5h18v4H3zM5 9v10h14V9M10 13h4"></path>';
     updateWordCount();
 }
 
 function clearEditor() {
+    summaryRequestId += 1;
+    setSummaryButtonBusy(false);
     elements.editorPane.classList.remove('has-note');
     elements.title.value = '';
     elements.editor.replaceChildren();
     elements.source.textContent = 'No note selected';
     elements.pinButton.classList.remove('is-active');
     elements.pinButton.setAttribute('aria-pressed', 'false');
+    elements.archiveButton.classList.remove('is-active');
+    elements.archiveButton.setAttribute('aria-label', 'Archive note');
+    elements.archiveButton.title = 'Archive note';
+    elements.archiveButton.setAttribute('aria-pressed', 'false');
     updateWordCount();
 }
 
@@ -297,6 +331,7 @@ function scheduleSave() {
     const note = notes.find((entry) => entry.id === selectedNoteId);
     if (!note) return;
 
+    window.clearTimeout(statusTimer);
     elements.saveStatus.textContent = 'Saving...';
     elements.saveStatus.parentElement.classList.remove('is-error');
     note.title = elements.title.value.trim();
@@ -364,9 +399,10 @@ function toggleArchive() {
     note.archived = !note.archived;
     note.updatedAt = new Date().toISOString();
     activeFolder = note.archived ? 'archived' : 'all';
-    persistNotes();
     renderFolderSelection();
+    renderEditor();
     renderCards();
+    if (persistNotes()) showTransientStatus(note.archived ? 'Note archived' : 'Note restored');
 }
 
 function openDeleteDialog() {
@@ -695,23 +731,67 @@ function insertLink() {
     scheduleSave();
 }
 
-function addSummaryDraft() {
-    const text = (elements.editor.innerText || '').trim();
-    if (!text) {
-        elements.saveStatus.textContent = 'Add note content before summarizing';
-        return;
-    }
-    const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
-    const summary = sentences.slice(0, 3).join(' ');
-    const existing = elements.editor.querySelector('[data-summary-draft]');
-    existing?.remove();
+function setSummaryButtonBusy(isBusy) {
+    elements.summarizeButton.disabled = isBusy;
+    elements.summarizeButton.classList.toggle('is-loading', isBusy);
+    elements.summarizeButton.setAttribute('aria-busy', String(isBusy));
+    elements.summarizeLabel.textContent = isBusy ? 'Working…' : 'Summarize';
+}
+
+function insertSummaryIntoContent(content, summary) {
+    const container = document.createElement('div');
+    container.innerHTML = sanitizeContent(content);
+    container.querySelector('.notes-summary-draft')?.remove();
 
     const section = document.createElement('div');
     section.className = 'notes-summary-draft';
-    section.innerHTML = `<h2>Quick summary draft</h2><p>${escapeHtml(summary)}</p>`;
-    elements.editor.prepend(section);
-    elements.saveStatus.textContent = 'Summary draft added';
-    scheduleSave();
+    const heading = document.createElement('h2');
+    heading.textContent = 'AI summary';
+    const paragraph = document.createElement('p');
+    paragraph.textContent = summary;
+    section.append(heading, paragraph);
+    container.prepend(section);
+    return sanitizeContent(container.innerHTML);
+}
+
+async function addSummaryDraft() {
+    const note = notes.find((entry) => entry.id === selectedNoteId);
+    const text = (elements.editor.innerText || '').trim();
+    if (!note) return;
+    if (!text) {
+        showTransientStatus('Add note content before summarizing', true);
+        return;
+    }
+
+    const requestId = ++summaryRequestId;
+    const originalContent = note.content;
+    setSummaryButtonBusy(true);
+    elements.saveStatus.textContent = 'Summarizing…';
+    elements.saveStatus.parentElement.classList.remove('is-error');
+
+    try {
+        const { response, data, ok } = await sendChatRequest({
+            message: `Summarize this note in a few concise bullet points. Keep the note's language and preserve its key facts, decisions, and action items. Return only the summary.\n\n${text}`,
+            model: state.currentModel,
+            systemInstruction: 'You summarize user notes clearly and faithfully. Do not add information that is not in the note.',
+        });
+        if (!ok) throw new Error(data.error || `The AI service returned ${response.status}.`);
+        const summary = typeof data.reply === 'string' ? data.reply.trim() : '';
+        if (!summary) throw new Error('The AI service returned an empty summary.');
+        if (requestId !== summaryRequestId || selectedNoteId !== note.id) return;
+        if (note.content !== originalContent) throw new Error('The note changed while it was being summarized. Try again.');
+
+        note.content = insertSummaryIntoContent(note.content, summary);
+        note.updatedAt = new Date().toISOString();
+        elements.editor.innerHTML = sanitizeContent(note.content);
+        updateWordCount();
+        renderCards();
+        if (persistNotes()) showTransientStatus('Summary added');
+    } catch (error) {
+        if (requestId === summaryRequestId) showTransientStatus(error.message || 'Could not summarize this note.', true);
+    } finally {
+        if (requestId === summaryRequestId) setSummaryButtonBusy(false);
+    }
 }
 
 export function bindNotesInteractions() {
