@@ -1,80 +1,11 @@
 const STORAGE_KEY = 'kali_notes';
-
-const INITIAL_CONTENT = `
-    <h2>How cells maintain balance</h2>
-    <p>Homeostasis is the ability of a cell to keep its internal environment stable while conditions outside continue to change. The cell membrane is selectively permeable, so it controls which substances enter and leave. Understanding this balance makes it easier to explain how cells stay healthy, communicate, and respond to their surroundings.</p>
-    <ul>
-        <li><strong>Diffusion:</strong> particles move from an area of higher concentration to an area of lower concentration.</li>
-        <li><strong>Osmosis:</strong> water crosses a selectively permeable membrane toward the side with more dissolved particles.</li>
-        <li><strong>Active transport:</strong> membrane proteins use energy to move substances against a concentration gradient.</li>
-    </ul>
-    <h3>Quick review</h3>
-    <div class="notes-checklist">
-        <div class="notes-checklist-item"><input type="checkbox" checked><span contenteditable="true">Compare passive and active transport using energy as the key difference.</span></div>
-        <div class="notes-checklist-item"><input type="checkbox"><span contenteditable="true">Draw a diagram showing water moving across a membrane.</span></div>
-        <div class="notes-checklist-item"><input type="checkbox"><span contenteditable="true">Review how concentration gradients affect the direction of movement.</span></div>
-    </div>
-    <p>When a cell is placed in a solution with a different concentration, water moves until the difference is reduced. In a balanced solution, water still moves in both directions, but the overall movement is equal. This is called dynamic equilibrium: the system is active even when there is no visible net change.</p>
-    <p>For exam questions, identify the starting concentrations first, then name the membrane process and predict the direction of movement. Remember that cells use energy for active transport, while diffusion and osmosis are passive. Linking the direction of movement to the concentration gradient is a reliable way to explain the result clearly. Sketch each process to connect the definitions with familiar classroom examples, and remember which processes need energy.</p>
-`;
-
-const INITIAL_NOTES = [
-    {
-        id: 'cell-biology-review',
-        title: 'Cell Biology — exam review',
-        folder: 'study',
-        source: 'chat',
-        tags: ['Biology', 'Exam'],
-        pinned: true,
-        archived: false,
-        updatedAt: '2026-11-14T10:20:00.000Z',
-        content: INITIAL_CONTENT,
-    },
-    {
-        id: 'design-sync',
-        title: 'Design sync — meeting notes',
-        folder: 'work',
-        source: 'web',
-        tags: ['Meeting', 'Team'],
-        pinned: false,
-        archived: false,
-        updatedAt: '2026-11-13T14:15:00.000Z',
-        content: '<h2>Design sync</h2><p>Align on the student onboarding flow, review open questions, and share next steps with the team.</p><ul><li>Keep the first-run experience simple.</li><li>Test the updated navigation with students.</li><li>Share final copy before Friday.</li></ul>',
-    },
-    {
-        id: 'enzyme-lab',
-        title: 'Enzyme activity — lab notes',
-        folder: 'work',
-        source: 'file',
-        tags: ['Chemistry', 'Lab'],
-        pinned: false,
-        archived: false,
-        updatedAt: '2026-11-12T09:30:00.000Z',
-        content: '<h2>Enzyme activity</h2><p>Record the temperature and pH for each sample before comparing reaction rates. Keep the control conditions consistent.</p><ul><li>Label each test tube clearly.</li><li>Repeat measurements for reliability.</li><li>Graph the average reaction time.</li></ul>',
-    },
-    {
-        id: 'membrane-transport',
-        title: 'Membrane transport — quick recap',
-        folder: 'chat',
-        source: 'chat',
-        tags: ['Biology', 'Review'],
-        pinned: false,
-        archived: false,
-        updatedAt: '2026-11-10T16:05:00.000Z',
-        content: '<h2>Transport at a glance</h2><p>Diffusion and osmosis move down a concentration gradient without added energy. Active transport moves against the gradient and uses energy from the cell.</p>',
-    },
-    {
-        id: 'climate-reading-list',
-        title: 'Climate & health — reading list',
-        folder: 'work',
-        source: 'web',
-        tags: ['Research', 'Health'],
-        pinned: false,
-        archived: true,
-        updatedAt: '2026-11-07T08:45:00.000Z',
-        content: '<h2>Climate and health</h2><p>Collect sources on heat exposure, public health, and community adaptation for the research brief.</p>',
-    },
-];
+const STARTER_NOTE_IDS = new Set([
+    'cell-biology-review',
+    'design-sync',
+    'enzyme-lab',
+    'membrane-transport',
+    'climate-reading-list',
+]);
 
 const SOURCE_ICONS = {
     chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2 1-4a7.5 7.5 0 1 1 16-5.5z"></path></svg>',
@@ -92,7 +23,7 @@ const FOLDER_LABELS = {
 
 let notes = loadNotes();
 let activeFolder = 'all';
-let selectedNoteId = notes.find((note) => !note.archived)?.id || null;
+let selectedNoteId = null;
 let saveTimer = null;
 let notesBound = false;
 
@@ -107,6 +38,7 @@ const elements = {
     listDescription: document.querySelector('#notesListDescription'),
     cards: document.querySelector('#notesCards'),
     editorPane: document.querySelector('#notesEditorPane'),
+    emptyNewButton: document.querySelector('#notesEmptyNewBtn'),
     backButton: document.querySelector('#notesBackBtn'),
     source: document.querySelector('#notesEditorSource'),
     pinButton: document.querySelector('#notesPinBtn'),
@@ -123,10 +55,10 @@ const elements = {
 function loadNotes() {
     try {
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (!stored) return INITIAL_NOTES.map((note) => ({ ...note }));
+        if (!stored) return [];
         const parsed = JSON.parse(stored);
         if (!Array.isArray(parsed)) throw new TypeError('Saved notes must be an array');
-        return parsed.filter((note) => note && typeof note.id === 'string').map((note) => ({
+        return parsed.filter((note) => note && typeof note.id === 'string' && !STARTER_NOTE_IDS.has(note.id)).map((note) => ({
             ...note,
             title: typeof note.title === 'string' ? note.title : '',
             content: sanitizeContent(typeof note.content === 'string' ? note.content : ''),
@@ -139,7 +71,7 @@ function loadNotes() {
         }));
     } catch (error) {
         console.error('[Kali Agent] Failed to load notes:', error);
-        return INITIAL_NOTES.map((note) => ({ ...note }));
+        return [];
     }
 }
 
@@ -265,9 +197,9 @@ function renderCards() {
         : 'Your recent notes in one place';
 
     if (!visibleNotes.some((note) => note.id === selectedNoteId)) {
-        selectedNoteId = visibleNotes[0]?.id || null;
-        if (selectedNoteId) renderEditor();
-        else clearEditor();
+        selectedNoteId = null;
+        clearEditor();
+        elements.view.classList.remove('is-editor-open');
     }
 
     visibleNotes.forEach((note) => {
@@ -318,6 +250,7 @@ function renderEditor() {
     const note = notes.find((entry) => entry.id === selectedNoteId);
     if (!note) return clearEditor();
 
+    elements.editorPane.classList.add('has-note');
     elements.title.value = note.title;
     elements.editor.innerHTML = sanitizeContent(note.content);
     elements.source.textContent = note.source === 'chat' ? 'Saved from chat' : note.source === 'web' ? 'Saved from web' : 'Saved from file';
@@ -331,6 +264,7 @@ function renderEditor() {
 }
 
 function clearEditor() {
+    elements.editorPane.classList.remove('has-note');
     elements.title.value = '';
     elements.editor.replaceChildren();
     elements.source.textContent = 'No note selected';
@@ -552,6 +486,7 @@ export function bindNotesInteractions() {
     elements.search.addEventListener('input', renderCards);
     elements.sort.addEventListener('change', renderCards);
     elements.newButton.addEventListener('click', createNote);
+    elements.emptyNewButton?.addEventListener('click', createNote);
     elements.backButton.addEventListener('click', () => elements.view.classList.remove('is-editor-open'));
     elements.title.addEventListener('input', scheduleSave);
     elements.editor.addEventListener('input', scheduleSave);

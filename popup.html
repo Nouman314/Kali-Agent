@@ -202,7 +202,7 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10l2 2h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path>
                                 </svg>
-                                All notes
+                                <span class="notes-folder-label">All notes</span>
                             </span>
                             <span class="notes-folder-count" data-count="all">4</span>
                         </button>
@@ -211,7 +211,7 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2 1-4a7.5 7.5 0 1 1 16-5.5z"></path>
                                 </svg>
-                                Saved from chat
+                                <span class="notes-folder-label">Saved from chat</span>
                             </span>
                             <span class="notes-folder-count" data-count="chat">2</span>
                         </button>
@@ -220,7 +220,7 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10l2 2h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path>
                                 </svg>
-                                Study
+                                <span class="notes-folder-label">Study</span>
                             </span>
                             <span class="notes-folder-count" data-count="study">1</span>
                         </button>
@@ -229,7 +229,7 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10l2 2h6.5A1.5 1.5 0 0 1 20 7.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path>
                                 </svg>
-                                Work
+                                <span class="notes-folder-label">Work</span>
                             </span>
                             <span class="notes-folder-count" data-count="work">2</span>
                         </button>
@@ -238,7 +238,7 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M3 5h18v4H3zM5 9v10h14V9M10 13h4"></path>
                                 </svg>
-                                Archived
+                                <span class="notes-folder-label">Archived</span>
                             </span>
                             <span class="notes-folder-count" data-count="archived">1</span>
                         </button>
@@ -261,6 +261,17 @@
                     </section>
 
                     <section class="notes-editor-pane" id="notesEditorPane" aria-label="Note editor">
+                        <div class="notes-editor-empty">
+                            <span class="notes-editor-empty-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <path d="M14 2v6h6M8 13h8M8 17h5"></path>
+                                </svg>
+                            </span>
+                            <h2>No note selected</h2>
+                            <p>Choose a note from your library, or start a new one.</p>
+                            <button class="notes-empty-new-btn" id="notesEmptyNewBtn" type="button">Create a note</button>
+                        </div>
                         <div class="notes-editor-topbar">
                             <button class="notes-back-btn" id="notesBackBtn" type="button" aria-label="Back to notes">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
