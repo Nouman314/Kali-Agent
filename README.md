@@ -19,7 +19,7 @@ Features
 * Model selection for different Gemini variants
 * Message actions include retry, copy, edit, Like/Dislike feedback, and auto-collapsing "Show more" for long user messages.
 * Attach PDFs, DOCX, PPTX, and common image files from the composer
-* Notes library with folders, search, sorting, pinning, archiving, rich-text editing, and Markdown/PDF export
+* Notes library with folders, search, sorting, pinning, archiving, deletion, rich-text editing, local autosave, and Markdown/PDF/DOCX export
 * Local Flask backend with CORS support
 
 ---

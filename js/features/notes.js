@@ -43,6 +43,11 @@ const elements = {
     source: document.querySelector('#notesEditorSource'),
     pinButton: document.querySelector('#notesPinBtn'),
     archiveButton: document.querySelector('#notesArchiveBtn'),
+    deleteButton: document.querySelector('#notesDeleteBtn'),
+    deleteDialog: document.querySelector('#notesDeleteDialog'),
+    deleteDescription: document.querySelector('#notesDeleteDescription'),
+    deleteCancelButton: document.querySelector('#notesDeleteCancel'),
+    deleteConfirmButton: document.querySelector('#notesDeleteConfirm'),
     title: document.querySelector('#notesTitleInput'),
     editor: document.querySelector('#notesEditorBody'),
     toolbar: document.querySelector('.notes-editor-toolbar'),
@@ -364,6 +369,54 @@ function toggleArchive() {
     renderCards();
 }
 
+function openDeleteDialog() {
+    const note = notes.find((entry) => entry.id === selectedNoteId);
+    if (!note || !elements.deleteDialog) return;
+    elements.deleteDescription.textContent = `“${note.title || 'Untitled note'}” will be permanently deleted.`;
+    elements.deleteDialog.hidden = false;
+    elements.deleteCancelButton.focus();
+}
+
+function closeDeleteDialog(returnFocus = true) {
+    if (!elements.deleteDialog) return;
+    elements.deleteDialog.hidden = true;
+    if (returnFocus && !elements.deleteButton.hidden) elements.deleteButton.focus();
+}
+
+function deleteSelectedNote() {
+    const noteIndex = notes.findIndex((entry) => entry.id === selectedNoteId);
+    if (noteIndex < 0) return closeDeleteDialog();
+
+    notes.splice(noteIndex, 1);
+    selectedNoteId = null;
+    closeDeleteDialog(false);
+    elements.view.classList.remove('is-editor-open');
+    persistNotes();
+    clearEditor();
+    renderCards();
+    elements.newButton.focus();
+}
+
+function handleDeleteDialogKeydown(event) {
+    if (elements.deleteDialog.hidden) return;
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        closeDeleteDialog();
+        return;
+    }
+    if (event.key !== 'Tab') return;
+
+    const buttons = [elements.deleteCancelButton, elements.deleteConfirmButton];
+    const currentIndex = buttons.indexOf(document.activeElement);
+    if (event.shiftKey && currentIndex <= 0) {
+        event.preventDefault();
+        elements.deleteConfirmButton.focus();
+    } else if (!event.shiftKey && currentIndex === buttons.length - 1) {
+        event.preventDefault();
+        elements.deleteCancelButton.focus();
+    }
+}
+
 function formatMarkdown(node) {
     if (node.nodeType === Node.TEXT_NODE) return node.textContent || '';
     if (node.nodeType !== Node.ELEMENT_NODE) return '';
@@ -409,6 +462,195 @@ function downloadFile(filename, content, mimeType) {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function xmlEscape(value) {
+    return String(value)
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
+function docxRun(text, options = {}) {
+    if (!text) return '';
+    const properties = [
+        options.bold ? '<w:b/>' : '',
+        options.italic ? '<w:i/>' : '',
+        options.underline ? '<w:u w:val="single"/>' : '',
+        options.highlight ? '<w:highlight w:val="yellow"/>' : '',
+        options.size ? `<w:sz w:val="${options.size}"/>` : '',
+    ].join('');
+    const runProperties = properties ? `<w:rPr>${properties}</w:rPr>` : '';
+    return `<w:r>${runProperties}<w:t xml:space="preserve">${xmlEscape(text)}</w:t></w:r>`;
+}
+
+function docxInline(node, options = {}) {
+    if (node.nodeType === Node.TEXT_NODE) return docxRun(node.textContent || '', options);
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+    if (node.tagName === 'BR') return '<w:r><w:br/></w:r>';
+    if (node.tagName === 'INPUT' && node.type === 'checkbox') return docxRun(node.checked ? '☒ ' : '☐ ', options);
+
+    const nestedOptions = { ...options };
+    if (['B', 'STRONG'].includes(node.tagName)) nestedOptions.bold = true;
+    if (['I', 'EM'].includes(node.tagName)) nestedOptions.italic = true;
+    if (node.tagName === 'A') nestedOptions.underline = true;
+    if (node.tagName === 'MARK') nestedOptions.highlight = true;
+    return Array.from(node.childNodes).map((child) => docxInline(child, nestedOptions)).join('');
+}
+
+function docxParagraph(runs, properties = '') {
+    const paragraphProperties = properties ? `<w:pPr>${properties}</w:pPr>` : '';
+    return `<w:p>${paragraphProperties}${runs || '<w:r><w:t></w:t></w:r>'}</w:p>`;
+}
+
+function docxList(node, depth = 0) {
+    const ordered = node.tagName === 'OL';
+    const items = Array.from(node.children).filter((child) => child.tagName === 'LI');
+    return items.map((item, index) => {
+        const inlineChildren = Array.from(item.childNodes).filter((child) => !['UL', 'OL'].includes(child.tagName));
+        const prefix = ordered ? `${index + 1}. ` : '• ';
+        const left = 720 * (depth + 1);
+        const paragraph = docxParagraph(
+            docxRun(prefix) + inlineChildren.map((child) => docxInline(child)).join(''),
+            `<w:ind w:left="${left}"/>`,
+        );
+        const nestedLists = Array.from(item.children)
+            .filter((child) => ['UL', 'OL'].includes(child.tagName))
+            .map((child) => docxList(child, depth + 1))
+            .join('');
+        return paragraph + nestedLists;
+    }).join('');
+}
+
+function docxBlock(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        const text = (node.textContent || '').trim();
+        return text ? docxParagraph(docxRun(text)) : '';
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+    if (node.tagName === 'UL' || node.tagName === 'OL') return docxList(node);
+    if (node.tagName === 'DIV' && node.classList.contains('notes-checklist-item')) {
+        const checkbox = node.querySelector('input[type="checkbox"]');
+        const label = node.querySelector('[contenteditable="true"]');
+        const labelRuns = label ? Array.from(label.childNodes).map((child) => docxInline(child)).join('') : '';
+        return docxParagraph(docxRun(checkbox?.checked ? '☒ ' : '☐ ') + labelRuns, '<w:ind w:left="360"/>');
+    }
+    if (node.tagName === 'DIV' && node.classList.contains('notes-checklist')) {
+        return Array.from(node.children).map(docxBlock).join('');
+    }
+    if (node.tagName === 'DIV' && node.classList.contains('notes-summary-draft')) {
+        return Array.from(node.children).map(docxBlock).join('');
+    }
+    if (/^H[1-3]$/.test(node.tagName)) {
+        const size = node.tagName === 'H1' ? 32 : node.tagName === 'H2' ? 28 : 24;
+        const runs = Array.from(node.childNodes).map((child) => docxInline(child, { bold: true, size })).join('');
+        return docxParagraph(runs);
+    }
+    if (node.tagName === 'P' || node.tagName === 'LI') {
+        return docxParagraph(Array.from(node.childNodes).map((child) => docxInline(child)).join(''));
+    }
+    if (node.tagName === 'BR') return docxParagraph('<w:r><w:br/></w:r>');
+    return Array.from(node.childNodes).map(docxBlock).join('');
+}
+
+function crc32(bytes) {
+    let crc = 0xffffffff;
+    for (const byte of bytes) {
+        crc ^= byte;
+        for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+    }
+    return (crc ^ 0xffffffff) >>> 0;
+}
+
+function concatenateBytes(parts) {
+    const result = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
+    let offset = 0;
+    parts.forEach((part) => {
+        result.set(part, offset);
+        offset += part.length;
+    });
+    return result;
+}
+
+function createStoredZip(files) {
+    const encoder = new TextEncoder();
+    const localParts = [];
+    const centralParts = [];
+    let localOffset = 0;
+
+    files.forEach(({ name, content }) => {
+        const nameBytes = encoder.encode(name);
+        const dataBytes = encoder.encode(content);
+        const checksum = crc32(dataBytes);
+        const localHeader = new Uint8Array(30 + nameBytes.length);
+        const localView = new DataView(localHeader.buffer);
+        localView.setUint32(0, 0x04034b50, true);
+        localView.setUint16(4, 20, true);
+        localView.setUint16(6, 0x0800, true);
+        localView.setUint16(8, 0, true);
+        localView.setUint16(10, 0, true);
+        localView.setUint16(12, 0x21, true);
+        localView.setUint32(14, checksum, true);
+        localView.setUint32(18, dataBytes.length, true);
+        localView.setUint32(22, dataBytes.length, true);
+        localView.setUint16(26, nameBytes.length, true);
+        localView.setUint16(28, 0, true);
+        localHeader.set(nameBytes, 30);
+        localParts.push(localHeader, dataBytes);
+
+        const centralHeader = new Uint8Array(46 + nameBytes.length);
+        const centralView = new DataView(centralHeader.buffer);
+        centralView.setUint32(0, 0x02014b50, true);
+        centralView.setUint16(4, 20, true);
+        centralView.setUint16(6, 20, true);
+        centralView.setUint16(8, 0x0800, true);
+        centralView.setUint16(10, 0, true);
+        centralView.setUint16(12, 0, true);
+        centralView.setUint16(14, 0x21, true);
+        centralView.setUint32(16, checksum, true);
+        centralView.setUint32(20, dataBytes.length, true);
+        centralView.setUint32(24, dataBytes.length, true);
+        centralView.setUint16(28, nameBytes.length, true);
+        centralView.setUint16(30, 0, true);
+        centralView.setUint16(32, 0, true);
+        centralView.setUint16(34, 0, true);
+        centralView.setUint16(36, 0, true);
+        centralView.setUint32(38, 0, true);
+        centralView.setUint32(42, localOffset, true);
+        centralHeader.set(nameBytes, 46);
+        centralParts.push(centralHeader);
+        localOffset += localHeader.length + dataBytes.length;
+    });
+
+    const centralDirectory = concatenateBytes(centralParts);
+    const endRecord = new Uint8Array(22);
+    const endView = new DataView(endRecord.buffer);
+    endView.setUint32(0, 0x06054b50, true);
+    endView.setUint16(4, 0, true);
+    endView.setUint16(6, 0, true);
+    endView.setUint16(8, files.length, true);
+    endView.setUint16(10, files.length, true);
+    endView.setUint32(12, centralDirectory.length, true);
+    endView.setUint32(16, localOffset, true);
+    endView.setUint16(20, 0, true);
+    return concatenateBytes([...localParts, centralDirectory, endRecord]);
+}
+
+function createDocx(note, editor) {
+    const title = note.title.trim() || 'Untitled note';
+    const titleRun = `<w:r><w:rPr><w:b/><w:sz w:val="36"/></w:rPr><w:t xml:space="preserve">${xmlEscape(title)}</w:t></w:r>`;
+    const body = Array.from(editor.childNodes).map(docxBlock).join('');
+    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${docxParagraph(titleRun)}${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+    const contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>';
+    const packageRelationships = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+    return createStoredZip([
+        { name: '[Content_Types].xml', content: contentTypes },
+        { name: '_rels/.rels', content: packageRelationships },
+        { name: 'word/document.xml', content: documentXml },
+    ]);
+}
+
 function exportNote(format) {
     const note = notes.find((entry) => entry.id === selectedNoteId);
     if (!note || !format) return;
@@ -421,13 +663,9 @@ function exportNote(format) {
         document.body.classList.add('notes-printing');
         window.print();
         document.body.classList.remove('notes-printing');
-    } else {
-        elements.saveStatus.textContent = 'DOCX export is not available yet';
-        window.setTimeout(() => {
-            if (elements.saveStatus.textContent === 'DOCX export is not available yet') {
-                elements.saveStatus.textContent = 'Saved';
-            }
-        }, 3000);
+    } else if (format === 'docx') {
+        const docx = createDocx(note, elements.editor);
+        downloadFile(`${filename}.docx`, docx, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     }
 
     elements.export.value = '';
@@ -495,6 +733,13 @@ export function bindNotesInteractions() {
     });
     elements.pinButton.addEventListener('click', togglePin);
     elements.archiveButton.addEventListener('click', toggleArchive);
+    elements.deleteButton.addEventListener('click', openDeleteDialog);
+    elements.deleteCancelButton.addEventListener('click', () => closeDeleteDialog());
+    elements.deleteConfirmButton.addEventListener('click', deleteSelectedNote);
+    elements.deleteDialog.addEventListener('click', (event) => {
+        if (event.target === elements.deleteDialog) closeDeleteDialog();
+    });
+    elements.deleteDialog.addEventListener('keydown', handleDeleteDialogKeydown);
     elements.export.addEventListener('change', () => exportNote(elements.export.value));
     elements.summarizeButton.addEventListener('click', addSummaryDraft);
     elements.toolbar.querySelectorAll('button[data-format]').forEach((button) => {

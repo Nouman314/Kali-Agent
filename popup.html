@@ -292,6 +292,11 @@
                                         <path d="M3 5h18v4H3zM5 9v10h14V9M10 13h4"></path>
                                     </svg>
                                 </button>
+                                <button class="notes-icon-action notes-delete-action" id="notesDeleteBtn" type="button" aria-label="Delete note" title="Delete note">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m4 4v6m6-6v6"></path>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                         <input class="notes-title-input" id="notesTitleInput" type="text" placeholder="Untitled note" aria-label="Note title" maxlength="120">
@@ -331,6 +336,21 @@
                                 <option value="docx">DOCX</option>
                             </select>
                         </footer>
+                    </section>
+                </div>
+                <div class="notes-delete-dialog" id="notesDeleteDialog" hidden>
+                    <section class="notes-delete-dialog-card" role="alertdialog" aria-modal="true" aria-labelledby="notesDeleteTitle" aria-describedby="notesDeleteDescription">
+                        <span class="notes-delete-dialog-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18M8 6V4h8v2m3 0-.8 14H5.8L5 6m4 4v6m6-6v6"></path>
+                            </svg>
+                        </span>
+                        <h2 id="notesDeleteTitle">Delete this note?</h2>
+                        <p id="notesDeleteDescription">This note will be permanently deleted.</p>
+                        <div class="notes-delete-dialog-actions">
+                            <button class="notes-delete-cancel" id="notesDeleteCancel" type="button">Cancel</button>
+                            <button class="notes-delete-confirm" id="notesDeleteConfirm" type="button">Delete note</button>
+                        </div>
                     </section>
                 </div>
             </div>
