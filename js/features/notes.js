@@ -408,7 +408,7 @@ function toggleArchive() {
 function openDeleteDialog() {
     const note = notes.find((entry) => entry.id === selectedNoteId);
     if (!note || !elements.deleteDialog) return;
-    elements.deleteDescription.textContent = `“${note.title || 'Untitled note'}” will be permanently deleted.`;
+    elements.deleteDescription.textContent = `“${note.title || 'Untitled note'}” will be permanently deleted. This can't be undone.`;
     elements.deleteDialog.hidden = false;
     elements.deleteCancelButton.focus();
 }

@@ -782,8 +782,10 @@
     inset: 0;
     display: grid;
     place-items: center;
-    padding: 20px;
-    background: rgba(24, 24, 35, 0.32);
+    padding: 24px;
+    background: rgba(24, 24, 35, 0.38);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
 }
 
 .notes-delete-dialog[hidden] {
@@ -792,14 +794,15 @@
 
 .notes-delete-dialog-card {
     display: flex;
-    width: min(100%, 360px);
+    box-sizing: border-box;
+    width: min(100%, 380px);
     flex-direction: column;
-    align-items: flex-start;
-    padding: 22px;
+    align-items: center;
+    padding: 24px;
     border: 1px solid var(--notes-control-border);
-    border-radius: 14px;
+    border-radius: 16px;
     background: #fff;
-    box-shadow: 0 18px 48px rgba(31, 29, 56, 0.2);
+    box-shadow: 0 24px 64px rgba(31, 29, 56, 0.24), 0 3px 10px rgba(31, 29, 56, 0.08);
 }
 
 .notes-delete-dialog-icon {
@@ -808,45 +811,52 @@
     height: 36px;
     margin-bottom: 14px;
     place-items: center;
-    border-radius: 10px;
-    background: #fff1f2;
-    color: #c2414b;
+    color: #e5534b;
 }
 
 .notes-delete-dialog-icon svg {
-    width: 18px;
-    height: 18px;
+    width: 28px;
+    height: 28px;
 }
 
 .notes-delete-dialog-card h2 {
+    margin: 0;
     color: #252530;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 650;
+    letter-spacing: -0.025em;
+    text-align: center;
 }
 
 .notes-delete-dialog-card p {
-    margin-top: 7px;
+    margin: 8px 0 0;
     color: #777683;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
+    text-align: center;
 }
 
 .notes-delete-dialog-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 8px;
     width: 100%;
-    margin-top: 20px;
+    margin-top: 22px;
 }
 
 .notes-delete-dialog-actions button {
-    min-height: 34px;
-    padding: 0 12px;
+    min-height: 38px;
+    padding: 0 14px;
     border-radius: 8px;
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.notes-delete-dialog-actions button:active {
+    transform: translateY(1px);
 }
 
 .notes-delete-cancel {
