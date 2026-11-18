@@ -8,6 +8,7 @@ Setup:
     3. python server.py  →  http://localhost:5000
 
 POST /chat            { "message": "...", "model": "..." }  →  { "reply": "..." }
+POST /summarize       { "text": "...", "model": "..." }     →  { "reply": "..." }
 POST /grammar-fix     { "text": "..." }                      →  { "corrected": "..." }
 POST /workspace-chat  multipart: message, model, attachments →  { "reply": "..." }
 POST /workspace-reset Clears the Workspace tab's document-chat history
@@ -40,8 +41,17 @@ if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
 
 # ── Gemini Config ────────────────────────────────────────────────
 client = genai.Client(api_key=GEMINI_API_KEY)
+summary_client = genai.Client(
+    api_key=GEMINI_API_KEY,
+    http_options=genai.types.HttpOptions(timeout=60_000),
+)
 
 DEFAULT_MODEL = "gemini-3.8-flash"
+SUMMARY_SYSTEM_INSTRUCTION = (
+    "Summarize the user's note in a few concise bullet points. Keep the note's "
+    "language and preserve its key facts, decisions, and action items. Return "
+    "only the summary, without an introduction."
+)
 SYSTEM_INSTRUCTION = (
     "You are Kali Agent, a helpful and intelligent AI assistant "
     "built into a Chrome extension. Be concise, accurate, and friendly."
@@ -298,6 +308,40 @@ def chat():
         if "image" in error_message.lower() and "does not support" in error_message.lower():
             return jsonify({"error": "The selected model does not support image input. Please switch to a vision-capable model or remove the image attachment."}), 400
         return jsonify({"error": f"AI error: {error_message}"}), 500
+
+
+@app.route("/summarize", methods=["POST"])
+def summarize():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Expected a JSON object."}), 400
+
+    note_text = data.get("text", "")
+    if not isinstance(note_text, str):
+        return jsonify({"error": "Note content must be text."}), 400
+    note_text = note_text.strip()
+    selected_model = data.get("model") or DEFAULT_MODEL
+    if not isinstance(selected_model, str):
+        return jsonify({"error": "Model must be a string."}), 400
+
+    if not note_text:
+        return jsonify({"error": "Note content cannot be empty."}), 400
+
+    try:
+        response = summary_client.models.generate_content(
+            model=selected_model,
+            contents=[genai.types.Content(
+                role="user",
+                parts=[genai.types.Part(text=note_text)],
+            )],
+            config=genai.types.GenerateContentConfig(
+                system_instruction=SUMMARY_SYSTEM_INSTRUCTION,
+            ),
+        )
+        return jsonify({"reply": response.text or ""})
+    except Exception as e:
+        print(f"[ERROR] Gemini note-summary call failed: {e}")
+        return jsonify({"error": f"AI error: {str(e)}"}), 500
 
 
 @app.route("/grammar-fix", methods=["POST"])

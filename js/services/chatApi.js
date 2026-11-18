@@ -45,6 +45,22 @@ export async function sendChatRequest({ message, model, attachments = [], signal
     };
 }
 
+export async function sendSummaryRequest({ text, model, signal }) {
+    const response = await fetch(CONFIG.ENDPOINTS.SUMMARIZE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, model }),
+        signal,
+    });
+
+    const data = await readJsonResponse(response);
+    return {
+        response,
+        data,
+        ok: response.ok && !data.error,
+    };
+}
+
 export async function resetChatSession() {
     try {
         await fetch(CONFIG.ENDPOINTS.RESET, { method: 'POST' });

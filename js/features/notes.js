@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { sendChatRequest } from '../services/chatApi.js';
+import { sendSummaryRequest } from '../services/chatApi.js';
 
 const STORAGE_KEY = 'kali_notes';
 const STARTER_NOTE_IDS = new Set([
@@ -766,15 +766,17 @@ async function addSummaryDraft() {
 
     const requestId = ++summaryRequestId;
     const originalContent = note.content;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 70_000);
     setSummaryButtonBusy(true);
     elements.saveStatus.textContent = 'Summarizing…';
     elements.saveStatus.parentElement.classList.remove('is-error');
 
     try {
-        const { response, data, ok } = await sendChatRequest({
-            message: `Summarize this note in a few concise bullet points. Keep the note's language and preserve its key facts, decisions, and action items. Return only the summary.\n\n${text}`,
+        const { response, data, ok } = await sendSummaryRequest({
+            text,
             model: state.currentModel,
-            systemInstruction: 'You summarize user notes clearly and faithfully. Do not add information that is not in the note.',
+            signal: controller.signal,
         });
         if (!ok) throw new Error(data.error || `The AI service returned ${response.status}.`);
         const summary = typeof data.reply === 'string' ? data.reply.trim() : '';
@@ -789,8 +791,14 @@ async function addSummaryDraft() {
         renderCards();
         if (persistNotes()) showTransientStatus('Summary added');
     } catch (error) {
-        if (requestId === summaryRequestId) showTransientStatus(error.message || 'Could not summarize this note.', true);
+        if (requestId === summaryRequestId) {
+            const message = error.name === 'AbortError'
+                ? 'Summary request timed out. Please try again.'
+                : error.message || 'Could not summarize this note.';
+            showTransientStatus(message, true);
+        }
     } finally {
+        window.clearTimeout(timeoutId);
         if (requestId === summaryRequestId) setSummaryButtonBusy(false);
     }
 }

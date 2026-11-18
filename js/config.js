@@ -1,6 +1,7 @@
 export const CONFIG = {
     ENDPOINTS: {
         CHAT: 'http://localhost:5000/chat',
+        SUMMARIZE: 'http://localhost:5000/summarize',
         RESET: 'http://localhost:5000/reset',
         GRAMMAR: 'http://localhost:5000/grammar-fix',
         WORKSPACE_CHAT: 'http://localhost:5000/workspace-chat',

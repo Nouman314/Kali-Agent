@@ -153,6 +153,11 @@ Response:
   "reply": "Hello! How can I assist you?"
 }
 
+POST /summarize
+
+Summarizes note text without using or changing the Chat tab's conversation history.
+Accepts JSON with `text` and an optional `model`, and returns a `reply`.
+
 ---
 
 POST /reset
