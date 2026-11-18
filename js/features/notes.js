@@ -705,6 +705,7 @@ function exportNote(format) {
     }
 
     elements.export.value = '';
+    elements.export.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function insertChecklist() {
@@ -794,10 +795,216 @@ async function addSummaryDraft() {
     }
 }
 
+let openNotesDropdown = null;
+
+function setupNotesDropdown(select, label, format = false) {
+    const control = select.parentElement;
+    const button = document.createElement('button');
+    const buttonLabel = document.createElement('span');
+    const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const menu = document.createElement('div');
+    const menuId = `${select.id}Menu`;
+    let activeIndex = -1;
+
+    button.type = 'button';
+    button.className = 'notes-select-button';
+    button.setAttribute('aria-label', label);
+    button.setAttribute('aria-haspopup', 'listbox');
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', menuId);
+    buttonLabel.className = 'notes-select-button-label';
+    button.append(buttonLabel);
+    chevron.setAttribute('viewBox', '0 0 24 24');
+    chevron.setAttribute('fill', 'none');
+    chevron.setAttribute('stroke', 'currentColor');
+    chevron.setAttribute('stroke-width', '2');
+    chevron.setAttribute('stroke-linecap', 'round');
+    chevron.setAttribute('stroke-linejoin', 'round');
+    chevron.setAttribute('aria-hidden', 'true');
+    chevron.classList.add('notes-select-chevron');
+    const chevronPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    chevronPath.setAttribute('d', 'm6 9 6 6 6-6');
+    chevron.append(chevronPath);
+    button.append(chevron);
+    control.insertBefore(button, select);
+
+    menu.id = menuId;
+    menu.className = 'notes-select-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.setAttribute('aria-label', label);
+    menu.hidden = true;
+    document.body.append(menu);
+
+    Array.from(select.options).forEach((option) => {
+        // Keep the export placeholder on the trigger only; it is not a menu choice.
+        if (format && option.disabled) return;
+
+        const item = document.createElement('div');
+        item.className = 'notes-select-option';
+        item.setAttribute('role', 'option');
+        item.dataset.value = option.value;
+        item.setAttribute('aria-disabled', String(option.disabled));
+        item.tabIndex = -1;
+
+        if (format) {
+            const badge = document.createElement('span');
+            badge.className = 'notes-select-option-format';
+            badge.setAttribute('aria-hidden', 'true');
+            badge.textContent = option.value.toUpperCase();
+            item.append(badge);
+        }
+
+        const text = document.createElement('span');
+        text.textContent = option.textContent;
+        item.append(text);
+
+        if (!format) {
+            const check = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            check.setAttribute('viewBox', '0 0 20 20');
+            check.setAttribute('fill', 'none');
+            check.setAttribute('stroke', 'currentColor');
+            check.setAttribute('stroke-width', '2');
+            check.setAttribute('stroke-linecap', 'round');
+            check.setAttribute('stroke-linejoin', 'round');
+            check.setAttribute('aria-hidden', 'true');
+            check.classList.add('notes-select-option-check');
+            const checkPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            checkPath.setAttribute('d', 'm4 10 4 4 8-8');
+            check.append(checkPath);
+            item.append(check);
+        }
+
+        item.addEventListener('click', () => {
+            if (option.disabled) return;
+            select.value = option.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            syncSelection();
+            close(true);
+        });
+        menu.append(item);
+    });
+
+    function syncSelection() {
+        const selectedOption = select.options[select.selectedIndex];
+        buttonLabel.textContent = selectedOption ? selectedOption.textContent : '';
+        menu.querySelectorAll('.notes-select-option').forEach((item) => {
+            const selectable = item.getAttribute('aria-disabled') !== 'true';
+            item.setAttribute('aria-selected', String(selectable && item.dataset.value === select.value));
+        });
+    }
+
+    function enabledItems() {
+        return Array.from(menu.querySelectorAll('.notes-select-option'))
+            .filter((item) => item.getAttribute('aria-disabled') !== 'true');
+    }
+
+    function focusItem(index) {
+        const items = enabledItems();
+        if (!items.length) return;
+        activeIndex = Math.max(0, Math.min(index, items.length - 1));
+        items[activeIndex].focus();
+        items[activeIndex].scrollIntoView({ block: 'nearest' });
+    }
+
+    function positionMenu() {
+        const rect = button.getBoundingClientRect();
+        const panel = elements.view.getBoundingClientRect();
+        const bounds = {
+            top: Math.max(8, panel.top),
+            right: Math.min(window.innerWidth - 8, panel.right),
+            bottom: Math.min(window.innerHeight - 8, panel.bottom),
+            left: Math.max(8, panel.left),
+        };
+        const width = Math.min(
+            Math.max(rect.width, format ? 164 : 112),
+            Math.max(80, bounds.right - bounds.left - 16),
+        );
+        const spaceAbove = Math.max(0, rect.top - bounds.top - 8);
+        const spaceBelow = Math.max(0, bounds.bottom - rect.bottom - 8);
+        const openUp = spaceAbove > spaceBelow;
+        menu.style.width = `${width}px`;
+        menu.style.maxHeight = `${Math.max(48, Math.min(220, openUp ? spaceAbove : spaceBelow))}px`;
+
+        const height = menu.offsetHeight;
+        const top = openUp ? rect.top - height - 6 : rect.bottom + 6;
+        menu.style.left = `${Math.max(bounds.left + 8, Math.min(rect.left, bounds.right - width - 8))}px`;
+        menu.style.top = `${Math.max(bounds.top + 8, Math.min(top, bounds.bottom - height - 8))}px`;
+    }
+
+    function onViewportChange() {
+        if (!menu.hidden) positionMenu();
+    }
+
+    function close(returnFocus) {
+        menu.hidden = true;
+        button.setAttribute('aria-expanded', 'false');
+        window.removeEventListener('resize', onViewportChange);
+        window.removeEventListener('scroll', onViewportChange, true);
+        if (openNotesDropdown === close) openNotesDropdown = null;
+        if (returnFocus) button.focus();
+    }
+
+    function open() {
+        if (openNotesDropdown && openNotesDropdown !== close) openNotesDropdown(false);
+        openNotesDropdown = close;
+        menu.hidden = false;
+        button.setAttribute('aria-expanded', 'true');
+        positionMenu();
+        window.addEventListener('resize', onViewportChange);
+        window.addEventListener('scroll', onViewportChange, true);
+
+        const selectedIndex = enabledItems().findIndex((item) => item.dataset.value === select.value);
+        focusItem(selectedIndex < 0 ? 0 : selectedIndex);
+    }
+
+    button.addEventListener('click', () => {
+        if (menu.hidden) open();
+        else close(false);
+    });
+    button.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (menu.hidden) open();
+            else focusItem(event.key === 'ArrowDown' ? activeIndex + 1 : activeIndex - 1);
+        } else if (event.key === 'Escape' && !menu.hidden) {
+            event.preventDefault();
+            close(true);
+        }
+    });
+    menu.addEventListener('keydown', (event) => {
+        const items = enabledItems();
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            focusItem(activeIndex + (event.key === 'ArrowDown' ? 1 : -1));
+        } else if (event.key === 'Home') {
+            event.preventDefault();
+            focusItem(0);
+        } else if (event.key === 'End') {
+            event.preventDefault();
+            focusItem(items.length - 1);
+        } else if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            items[activeIndex]?.click();
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            close(true);
+        } else if (event.key === 'Tab') {
+            close(true);
+        }
+    });
+    document.addEventListener('pointerdown', (event) => {
+        if (!menu.hidden && !control.contains(event.target) && !menu.contains(event.target)) close(false);
+    });
+    select.addEventListener('change', syncSelection);
+    syncSelection();
+}
+
 export function bindNotesInteractions() {
     if (notesBound || !elements.view) return;
     notesBound = true;
 
+    setupNotesDropdown(elements.sort, 'Sort notes');
+    setupNotesDropdown(elements.export, 'Export note', true);
     elements.folders.forEach((folder) => {
         folder.addEventListener('click', () => setFolder(folder.dataset.folder));
     });

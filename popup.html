@@ -179,12 +179,13 @@
                             </svg>
                             <input id="notesSearch" type="search" placeholder="Search notes" aria-label="Search notes">
                         </label>
-                        <label class="notes-sort-label" for="notesSort">Sort</label>
-                        <select class="notes-sort" id="notesSort" aria-label="Sort notes">
-                            <option value="recent">Recent</option>
-                            <option value="oldest">Oldest</option>
-                            <option value="title">Title</option>
-                        </select>
+                        <div class="notes-select-control notes-sort-control">
+                            <select class="notes-native-select" id="notesSort" aria-label="Sort notes" aria-hidden="true" tabindex="-1">
+                                <option value="recent">Recent</option>
+                                <option value="oldest">Oldest</option>
+                                <option value="title">Title</option>
+                            </select>
+                        </div>
                         <button class="notes-new-btn" id="newNoteBtn" type="button">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
                                 <path d="M12 5v14M5 12h14"></path>
@@ -329,12 +330,14 @@
                             <span class="notes-word-count" id="notesWordCount">0 words</span>
                             <span class="notes-footer-spacer"></span>
                             <label class="notes-export-label" for="notesExport">Export</label>
-                            <select class="notes-export-select" id="notesExport" aria-label="Export note">
-                                <option value="">Choose format</option>
-                                <option value="md">Markdown</option>
-                                <option value="pdf">PDF</option>
-                                <option value="docx">DOCX</option>
-                            </select>
+                            <div class="notes-select-control notes-export-control">
+                                <select class="notes-native-select" id="notesExport" aria-label="Export note" aria-hidden="true" tabindex="-1">
+                                    <option value="" disabled selected aria-disabled="true">Choose format</option>
+                                    <option value="md">Markdown</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="docx">DOCX</option>
+                                </select>
+                            </div>
                         </footer>
                     </section>
                 </div>
