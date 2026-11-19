@@ -6,6 +6,9 @@
     flex-direction: column;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    scroll-behavior: smooth;
 }
 
 .chat-area::-webkit-scrollbar {
@@ -116,12 +119,27 @@
     font-weight: 600;
 }
 
+.chat-bubble--ai {
+    letter-spacing: -0.006em;
+}
+
 .chat-bubble--ai code:not(.hljs) {
     background: #e5e7eb;
     padding: 2px 5px;
     border-radius: 4px;
     font-size: 13px;
-    font-family: monospace;
+    font-family: var(--font-mono);
+}
+
+.chat-bubble--ai a {
+    color: #4b3fd8;
+    text-decoration: underline;
+    text-decoration-color: rgba(75, 63, 216, 0.35);
+    text-underline-offset: 2px;
+}
+
+.chat-bubble--ai a:hover {
+    text-decoration-color: #4b3fd8;
 }
 
 .chat-bubble--ai pre {
@@ -235,4 +253,310 @@
     font-size: 14px;
     font-weight: 600;
     color: #262626;
+}
+
+/* ── Normal chat: lively orb + dot-wave thinking indicator ─────── */
+.chat-thinking {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 22px;
+    padding: 1px 0;
+}
+
+.chat-thinking-orb {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: conic-gradient(from 0deg, #4b3fd8, #8b5cf6, #22d3ee, #4b3fd8);
+    box-shadow: 0 0 12px rgba(75, 63, 216, 0.25);
+    animation: chatOrbSpin 2.4s linear infinite;
+}
+
+.chat-thinking-orb::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: #ffffff;
+}
+
+@keyframes chatOrbSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.chat-thinking-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    letter-spacing: -0.01em;
+}
+
+.chat-thinking-label.chat-label-anim {
+    animation: chatLabelIn 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes chatLabelIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chat-thinking-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.chat-thinking-dots i {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #a5a3f5;
+    animation: chatDotWave 1.2s ease-in-out infinite;
+}
+
+.chat-thinking-dots i:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.chat-thinking-dots i:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes chatDotWave {
+
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.45;
+    }
+
+    30% {
+        transform: translateY(-4px);
+        opacity: 1;
+    }
+}
+
+/* ── Web search: Claude-style shimmer status ───────────────────── */
+.search-thinking {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 22px;
+    padding: 1px 0;
+}
+
+.search-thinking-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border-radius: 7px;
+    color: #4b3fd8;
+    background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+    border: 0.5px solid rgba(75, 63, 216, 0.16);
+}
+
+.search-thinking-icon svg {
+    width: 13px;
+    height: 13px;
+    animation: searchIconPulse 1.9s ease-in-out infinite;
+}
+
+@keyframes searchIconPulse {
+
+    0%,
+    100% {
+        opacity: 0.55;
+        transform: scale(0.92);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.search-thinking .shimmer-text {
+    font-weight: 500;
+}
+
+/* ── Web search: source links under the answer ────────────────── */
+.search-sources {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 0.5px solid rgba(0, 0, 0, 0.08);
+}
+
+.search-sources-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #9ca3af;
+}
+
+.search-sources-label svg {
+    width: 12px;
+    height: 12px;
+}
+
+.source-chip {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    border: 0.5px solid rgba(0, 0, 0, 0.07);
+    background: #fafafa;
+    color: #111111;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.source-chip:hover {
+    background: #f4f4f5;
+    border-color: rgba(75, 63, 216, 0.25);
+    transform: translateY(-1px);
+}
+
+.source-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    background: rgba(75, 63, 216, 0.09);
+    color: #4b3fd8;
+    font-size: 10.5px;
+    font-weight: 600;
+}
+
+.source-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.source-title {
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1.35;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.source-domain {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+/* ── Web search: setup hint when API keys are missing ─────────── */
+.search-setup {
+    margin-top: 10px;
+    padding: 10px 11px;
+    border-radius: 11px;
+    border: 0.5px solid rgba(75, 63, 216, 0.2);
+    background: #f8f7ff;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #3f3d56;
+}
+
+.search-setup-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-weight: 600;
+    color: #111111;
+}
+
+.search-setup-title svg {
+    width: 14px;
+    height: 14px;
+    color: #4b3fd8;
+}
+
+.search-setup-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 7px;
+}
+
+.search-setup-links a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 9px;
+    border-radius: 7px;
+    background: #ffffff;
+    border: 0.5px solid rgba(75, 63, 216, 0.22);
+    color: #4b3fd8;
+    font-size: 11.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.search-setup-links a svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+.search-setup-links a:hover {
+    background: rgba(75, 63, 216, 0.08);
+    border-color: rgba(75, 63, 216, 0.4);
+}
+
+.search-setup code {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(75, 63, 216, 0.08);
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .chat-thinking-orb,
+    .chat-thinking-dots i,
+    .search-thinking-icon svg,
+    .chat-thinking-label.chat-label-anim {
+        animation: none;
+    }
+
+    .chat-area {
+        scroll-behavior: auto;
+    }
 }

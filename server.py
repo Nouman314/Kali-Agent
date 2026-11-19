@@ -7,7 +7,8 @@ Setup:
     2. pip install -r requirements.txt
     3. python server.py  →  http://localhost:5000
 
-POST /chat            { "message": "...", "model": "..." }  →  { "reply": "..." }
+POST /chat            { "message": "...", "model": "...", "web_search": false }
+                      →  { "reply": "...", "sources": [...] }
 POST /summarize       { "text": "...", "model": "..." }     →  { "reply": "..." }
 POST /grammar-fix     { "text": "..." }                      →  { "corrected": "..." }
 POST /workspace-chat  multipart: message, model, attachments →  { "reply": "..." }
@@ -17,8 +18,12 @@ GET  /health          Returns server status
 """
 
 import io
+import json
 import mimetypes
 import os
+import urllib.error
+import urllib.parse
+import urllib.request
 from flask       import Flask, request, jsonify
 from flask_cors  import CORS
 from dotenv      import load_dotenv
@@ -46,6 +51,24 @@ summary_client = genai.Client(
     http_options=genai.types.HttpOptions(timeout=60_000),
 )
 
+# ── Google Programmable Search (free tier: 100 queries/day) ─────
+# API key:  https://console.cloud.google.com/apis/credentials
+# Engine:   https://programmablesearchengine.google.com/controlpanel/create
+# Docs:     https://developers.google.com/custom-search/v1/overview
+GOOGLE_SEARCH_API_KEY = os.getenv("GOOGLE_SEARCH_API_KEY", "").strip()
+GOOGLE_SEARCH_ENGINE_ID = os.getenv("GOOGLE_SEARCH_ENGINE_ID", "").strip()
+GOOGLE_SEARCH_ENDPOINT = "https://www.googleapis.com/customsearch/v1"
+WEB_SEARCH_RESULT_COUNT = 5
+
+
+class WebSearchError(Exception):
+    """Raised when web search is unavailable or fails."""
+
+    def __init__(self, message, code="web_search_failed"):
+        super().__init__(message)
+        self.code = code
+
+
 DEFAULT_MODEL = "gemini-3.8-flash"
 SUMMARY_SYSTEM_INSTRUCTION = (
     "Summarize the user's note in a few concise bullet points. Keep the note's "
@@ -69,6 +92,15 @@ WORKSPACE_SYSTEM_INSTRUCTION = (
     "only the content of the attached document. Quote or point to specific "
     "sections when it helps. If the document doesn't contain the answer, say so "
     "honestly instead of guessing. Be concise and friendly."
+)
+WEB_SEARCH_SYSTEM_INSTRUCTION = (
+    "You have live web search results for this turn. Answer the user's question "
+    "using those results, and cite claims with inline Markdown links using the "
+    "exact source URLs, for example [1](https://example.com/page). Prefer recent, "
+    "primary, and authoritative sources. Never invent URLs or facts that are not "
+    "supported by the results. If the results are insufficient, conflicting, or "
+    "outdated, say so clearly. Be concise and friendly, and format the answer "
+    "with short paragraphs or bullets when helpful."
 )
 GRAMMAR_MAX_CHARS = 8000
 MAX_ATTACHMENTS = 5
@@ -244,6 +276,99 @@ def _build_attachment_context(uploaded_files, user_message):
 
     return prompt_parts, "\n\n".join(summary_parts).strip(), None
 
+
+def _as_bool(value):
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _web_search_configured():
+    return bool(GOOGLE_SEARCH_API_KEY and GOOGLE_SEARCH_ENGINE_ID)
+
+
+def _google_web_search(query, count=WEB_SEARCH_RESULT_COUNT):
+    """Query the Google Custom Search JSON API (100 free queries/day)."""
+    if not _web_search_configured():
+        raise WebSearchError(
+            "Web search is not configured yet. Add GOOGLE_SEARCH_API_KEY and "
+            "GOOGLE_SEARCH_ENGINE_ID to .env, then restart server.py. Google "
+            "Custom Search includes 100 free queries per day.",
+            code="web_search_not_configured",
+        )
+
+    params = urllib.parse.urlencode({
+        "key": GOOGLE_SEARCH_API_KEY,
+        "cx": GOOGLE_SEARCH_ENGINE_ID,
+        "q": query,
+        "num": max(1, min(int(count), 10)),
+        "safe": "off",
+    })
+    search_request = urllib.request.Request(
+        f"{GOOGLE_SEARCH_ENDPOINT}?{params}",
+        headers={"User-Agent": "KaliAgent/1.0"},
+    )
+
+    try:
+        with urllib.request.urlopen(search_request, timeout=12) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        detail = ""
+        try:
+            detail = exc.read().decode("utf-8", errors="replace")[:300]
+        except Exception:
+            pass
+
+        if exc.code == 429:
+            raise WebSearchError(
+                "Google search quota reached (the free tier allows 100 queries per "
+                "day). Try again tomorrow or enable billing in Google Cloud.",
+                code="web_search_quota",
+            ) from exc
+
+        message = f"Google search failed (HTTP {exc.code})."
+        if detail:
+            message = f"{message} {detail}"
+        raise WebSearchError(message, code="web_search_failed") from exc
+    except Exception as exc:
+        raise WebSearchError(
+            f"Could not reach Google search: {exc}",
+            code="web_search_failed",
+        ) from exc
+
+    items = payload.get("items") or []
+    results = []
+    for item in items[:count]:
+        link = (item.get("link") or "").strip()
+        if not link:
+            continue
+        results.append({
+            "title": (item.get("title") or link).strip(),
+            "link": link,
+            "snippet": " ".join((item.get("snippet") or "").split()),
+        })
+
+    return results
+
+
+def _format_search_results(query, results):
+    if not results:
+        return (
+            f'[Web search for: "{query}"]\n'
+            "No search results were returned. Tell the user that you could not "
+            "find live sources and answer cautiously from general knowledge."
+        )
+
+    lines = [f'[Web search results for: "{query}"]']
+    for index, result in enumerate(results, start=1):
+        lines.append(
+            f'{index}. {result["title"]}\n'
+            f'URL: {result["link"]}\n'
+            f'Summary: {result["snippet"] or "(no snippet available)"}'
+        )
+    return "\n\n".join(lines)
+
+
 # ── Flask App ────────────────────────────────────────────────────
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -258,7 +383,8 @@ def chat():
         user_message = request.form.get("message", "").strip()
         selected_model = request.form.get("model") or DEFAULT_MODEL
         system_instruction = request.form.get("system_instruction") or SYSTEM_INSTRUCTION
-        uploaded_files = request.files.getlist("attachments")
+        upload_files = request.files.getlist("attachments")
+        use_web_search = _as_bool(request.form.get("web_search"))
     else:
         data = request.get_json(silent=True) or {}
 
@@ -268,10 +394,21 @@ def chat():
         user_message = data["message"].strip()
         selected_model = data.get("model") or DEFAULT_MODEL
         system_instruction = data.get("system_instruction") or SYSTEM_INSTRUCTION
-        uploaded_files = []
+        use_web_search = _as_bool(data.get("web_search"))
+        upload_files = []
 
-    if not user_message and not uploaded_files:
+    if not user_message and not upload_files:
         return jsonify({"error": "Message cannot be empty."}), 400
+
+    search_results = []
+    if use_web_search:
+        if not user_message:
+            return jsonify({"error": "Web search needs a text query."}), 400
+        try:
+            search_results = _google_web_search(user_message)
+        except WebSearchError as exc:
+            return jsonify({"error": str(exc), "code": exc.code}), 400
+        system_instruction = f"{system_instruction}\n\n{WEB_SEARCH_SYSTEM_INSTRUCTION}"
 
     try:
         contents = [
@@ -279,9 +416,18 @@ def chat():
             for entry in conversation_history
         ]
 
-        attachment_parts, history_message, attachment_error = _build_attachment_context(uploaded_files, user_message)
+        attachment_parts, history_message, attachment_error = _build_attachment_context(upload_files, user_message)
         if attachment_error:
             return jsonify({"error": attachment_error}), 400
+
+        if use_web_search:
+            attachment_parts.insert(
+                0,
+                genai.types.Part(
+                    text=_format_search_results(user_message, search_results)
+                    + "\n\nAnswer the question below using these search results.\n"
+                ),
+            )
 
         contents.append(genai.types.Content(
             role="user",
@@ -300,7 +446,7 @@ def chat():
         conversation_history.append({"role": "user",  "text": history_message})
         conversation_history.append({"role": "model", "text": reply})
 
-        return jsonify({"reply": reply})
+        return jsonify({"reply": reply, "sources": search_results})
 
     except Exception as e:
         print(f"[ERROR] Gemini API call failed: {e}")
@@ -457,7 +603,15 @@ def reset():
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "model": DEFAULT_MODEL})
+    return jsonify({
+        "status": "ok",
+        "model": DEFAULT_MODEL,
+        "web_search": {
+            "configured": _web_search_configured(),
+            "free_queries_per_day": 100,
+            "docs": "https://developers.google.com/custom-search/v1/overview",
+        },
+    })
 
 
 # ── Entry Point ──────────────────────────────────────────────────

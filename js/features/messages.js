@@ -204,8 +204,9 @@ function createBubbleWrapper(role, showActions = true) {
         padding: role === 'user' ? '7px 8px 10px 10px' : '7px 8px 10px 17px',
         borderRadius: role === 'user' ? '18px 18px 4px 18px' : '0',
         marginBottom: '4px',
-        lineHeight: '1.5',
+        lineHeight: '1.62',
         fontSize: '14px',
+        fontFamily: 'var(--font-sans)',
         wordBreak: 'break-word',
         background: role === 'user' ? 'linear-gradient(135deg, #6073ea, #4b3fd8)' : 'transparent',
         color: role === 'user' ? '#fff' : '#111111',
@@ -443,7 +444,167 @@ export function bindChatInteractions() {
     dom.chatArea.addEventListener('click', handleBubbleActionClick);
 }
 
+const SEARCH_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="7"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+</svg>`;
+
+const GLOBE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="9"></circle>
+    <line x1="3" y1="12" x2="21" y2="12"></line>
+    <path d="M12 3a14.5 14.5 0 0 1 0 18a14.5 14.5 0 0 1 0-18z"></path>
+</svg>`;
+
+const EXTERNAL_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M7 17L17 7"></path>
+    <path d="M8 7h9v9"></path>
+</svg>`;
+
+function startThinkingAnimation(bubble, useWebSearch) {
+    let phraseIndex = 0;
+    bubble.innerHTML = '';
+
+    if (useWebSearch) {
+        const phrases = CONFIG.SEARCH_PHRASES;
+        const indicator = document.createElement('div');
+        indicator.className = 'search-thinking';
+        indicator.setAttribute('role', 'status');
+        indicator.setAttribute('aria-live', 'polite');
+        indicator.innerHTML = `<span class="search-thinking-icon">${SEARCH_ICON}</span>
+            <span class="search-phrase-slot"></span>`;
+        bubble.appendChild(indicator);
+
+        const slot = indicator.querySelector('.search-phrase-slot');
+        const renderPhrase = (text) => {
+            slot.innerHTML = '';
+            const wrapper = document.createElement('span');
+            wrapper.className = 'phrase-wrapper';
+            const shimmer = document.createElement('span');
+            shimmer.className = 'shimmer-text';
+            shimmer.textContent = text;
+            wrapper.appendChild(shimmer);
+            slot.appendChild(wrapper);
+        };
+
+        renderPhrase(phrases[0]);
+        const timer = setInterval(() => {
+            phraseIndex = (phraseIndex + 1) % phrases.length;
+            renderPhrase(phrases[phraseIndex]);
+        }, 2000);
+
+        return () => clearInterval(timer);
+    }
+
+    const phrases = CONFIG.CHAT_PHRASES;
+    const indicator = document.createElement('div');
+    indicator.className = 'chat-thinking';
+    indicator.setAttribute('role', 'status');
+    indicator.setAttribute('aria-live', 'polite');
+    indicator.innerHTML = `<span class="chat-thinking-orb" aria-hidden="true"></span>
+        <span class="chat-thinking-label"></span>
+        <span class="chat-thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span>`;
+    bubble.appendChild(indicator);
+
+    const label = indicator.querySelector('.chat-thinking-label');
+    const renderLabel = (text) => {
+        label.classList.remove('chat-label-anim');
+        void label.offsetWidth;
+        label.textContent = `${text}…`;
+        label.classList.add('chat-label-anim');
+    };
+
+    renderLabel(phrases[0]);
+    const timer = setInterval(() => {
+        phraseIndex = (phraseIndex + 1) % phrases.length;
+        renderLabel(phrases[phraseIndex]);
+    }, 2400);
+
+    return () => clearInterval(timer);
+}
+
+function getSourceDomain(url) {
+    try {
+        return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+        return url;
+    }
+}
+
+function renderSearchSources(bubble, sources) {
+    if (!Array.isArray(sources) || !sources.length) return;
+
+    const section = document.createElement('div');
+    section.className = 'search-sources';
+
+    const label = document.createElement('div');
+    label.className = 'search-sources-label';
+    label.innerHTML = `${GLOBE_ICON}<span>Web sources</span>`;
+    section.appendChild(label);
+
+    sources.forEach((source, index) => {
+        if (!source || !source.link) return;
+
+        const chip = document.createElement('a');
+        chip.className = 'source-chip';
+        chip.href = source.link;
+        chip.target = '_blank';
+        chip.rel = 'noopener noreferrer';
+
+        const number = document.createElement('span');
+        number.className = 'source-index';
+        number.textContent = String(index + 1);
+
+        const textWrap = document.createElement('span');
+        textWrap.className = 'source-text';
+
+        const title = document.createElement('span');
+        title.className = 'source-title';
+        title.textContent = source.title || getSourceDomain(source.link);
+
+        const domain = document.createElement('span');
+        domain.className = 'source-domain';
+        domain.textContent = getSourceDomain(source.link);
+
+        textWrap.appendChild(title);
+        textWrap.appendChild(domain);
+        chip.appendChild(number);
+        chip.appendChild(textWrap);
+        section.appendChild(chip);
+    });
+
+    if (section.childElementCount > 1) {
+        bubble.appendChild(section);
+    }
+}
+
+function renderErrorState(bubble, data) {
+    bubble.innerHTML = '';
+
+    const message = document.createElement('div');
+    message.className = 'chat-error';
+    message.textContent = `⚠️ ${data?.error || 'Server error'}`;
+    bubble.appendChild(message);
+
+    if (data?.code !== 'web_search_not_configured') return;
+
+    const setup = document.createElement('div');
+    setup.className = 'search-setup';
+    setup.innerHTML = `
+        <div class="search-setup-title">${SEARCH_ICON}<span>Enable free web search</span></div>
+        <div>Google Custom Search includes <strong>100 free searches per day</strong>. Add
+            <code>GOOGLE_SEARCH_API_KEY</code> and <code>GOOGLE_SEARCH_ENGINE_ID</code> to
+            <code>.env</code>, then restart <code>server.py</code>.</div>
+        <div class="search-setup-links">
+            <a href="${CONFIG.WEB_SEARCH.CONSOLE_URL}" target="_blank" rel="noopener noreferrer">Get API key ${EXTERNAL_ICON}</a>
+            <a href="${CONFIG.WEB_SEARCH.ENGINE_URL}" target="_blank" rel="noopener noreferrer">Create search engine ${EXTERNAL_ICON}</a>
+            <a href="${CONFIG.WEB_SEARCH.API_DOCS_URL}" target="_blank" rel="noopener noreferrer">Free tier docs ${EXTERNAL_ICON}</a>
+        </div>`;
+    bubble.appendChild(setup);
+}
+
 export async function processAiResponse({ text, attachments = [] }) {
+    const useWebSearch = Boolean(state.webSearchEnabled);
+
     state.isAiResponding = true;
     state.abortController = new AbortController();
 
@@ -455,24 +616,11 @@ export async function processAiResponse({ text, attachments = [] }) {
 
     const aiBubble = appendBubble('', 'ai', false);
     const aiWrapper = aiBubble.closest('.message-wrapper');
-    let phraseIndex = 0;
-
-    function renderPhrase() {
-        aiBubble.innerHTML = '';
-        const wrapper = document.createElement('span');
-        wrapper.className = 'phrase-wrapper';
-        const shimmer = document.createElement('span');
-        shimmer.className = 'shimmer-text';
-        shimmer.textContent = CONFIG.THINKING_PHRASES[phraseIndex];
-        wrapper.appendChild(shimmer);
-        aiBubble.appendChild(wrapper);
+    if (useWebSearch) {
+        aiBubble.classList.add('chat-bubble--search');
     }
 
-    renderPhrase();
-    const thinkingInterval = setInterval(() => {
-        phraseIndex = (phraseIndex + 1) % CONFIG.THINKING_PHRASES.length;
-        renderPhrase();
-    }, 2000);
+    let stopThinking = startThinkingAnimation(aiBubble, useWebSearch);
 
     try {
         const { response, data, ok } = await sendChatRequest({
@@ -481,18 +629,22 @@ export async function processAiResponse({ text, attachments = [] }) {
             attachments,
             signal: state.abortController.signal,
             systemInstruction: state.activeAgent?.systemInstruction || undefined,
+            webSearch: useWebSearch,
         });
 
-        clearInterval(thinkingInterval);
+        stopThinking();
         aiBubble.innerHTML = '';
 
         if (!ok) {
-            aiBubble.textContent = `⚠️ ${data.error || 'Server error'}`;
+            renderErrorState(aiBubble, data);
+            dom.chatArea.scrollTop = dom.chatArea.scrollHeight;
             return false;
         }
 
         aiBubble.dataset.rawText = data.reply || '';
         await typeText(aiBubble, data.reply || '', CONFIG.TYPEWRITER.SPEED_MS, state.abortController.signal);
+        renderSearchSources(aiBubble, data.sources);
+        scrollChatToBottom();
 
         if (aiWrapper) {
             aiWrapper.appendChild(createBubbleActions('ai'));
@@ -504,7 +656,7 @@ export async function processAiResponse({ text, attachments = [] }) {
 
         return response.ok;
     } catch (err) {
-        clearInterval(thinkingInterval);
+        stopThinking();
         aiBubble.innerHTML = '';
 
         if (err.name === 'AbortError') {

@@ -27,7 +27,7 @@
     min-height: 0;
     overflow: hidden;
     color: #111827;
-    font-family: 'Inter', 'Geist', sans-serif;
+    font-family: var(--font-sans);
 }
 
 .notes-view[hidden],
@@ -226,7 +226,7 @@
     background: var(--notes-panel-background);
     box-shadow: 0 6px 18px rgba(31, 31, 52, 0.12);
     color: #393945;
-    font-family: 'Inter', 'Geist', sans-serif;
+    font-family: var(--font-sans);
     font-size: 12px;
     scrollbar-width: thin;
 }

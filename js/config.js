@@ -46,6 +46,15 @@ export const CONFIG = {
         CHUNK_SIZE: 5,
         SPEED_MS: 1,
     },
+    CHAT_PHRASES: ['Thinking', 'Reasoning', 'Drafting'],
+    SEARCH_PHRASES: [
+        'Searching the web...',
+        'Thinking...',
+        'Processing...',
+        'Analyzing...',
+        'Generating...',
+        'Almost there...',
+    ],
     THINKING_PHRASES: [
         'Thinking...',
         'Processing...',
@@ -53,6 +62,14 @@ export const CONFIG = {
         'Generating...',
         'Almost there...',
     ],
+    WEB_SEARCH: {
+        MAX_RESULTS: 5,
+        // Google Custom Search JSON API — free tier: 100 queries/day.
+        // https://developers.google.com/custom-search/v1/overview
+        API_DOCS_URL: 'https://developers.google.com/custom-search/v1/overview',
+        ENGINE_URL: 'https://programmablesearchengine.google.com/controlpanel/create',
+        CONSOLE_URL: 'https://console.cloud.google.com/apis/credentials',
+    },
 };
 
 export function configureMarkdownRenderer() {

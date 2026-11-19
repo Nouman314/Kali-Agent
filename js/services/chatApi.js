@@ -8,7 +8,14 @@ async function readJsonResponse(response) {
     }
 }
 
-export async function sendChatRequest({ message, model, attachments = [], signal, systemInstruction }) {
+export async function sendChatRequest({
+    message,
+    model,
+    attachments = [],
+    signal,
+    systemInstruction,
+    webSearch = false,
+}) {
     const hasAttachments = attachments.length > 0;
     let response;
 
@@ -16,6 +23,7 @@ export async function sendChatRequest({ message, model, attachments = [], signal
         const formData = new FormData();
         formData.append('message', message);
         formData.append('model', model);
+        formData.append('web_search', webSearch ? 'true' : 'false');
         if (systemInstruction) {
             formData.append('system_instruction', systemInstruction);
         }
@@ -32,7 +40,12 @@ export async function sendChatRequest({ message, model, attachments = [], signal
         response = await fetch(CONFIG.ENDPOINTS.CHAT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, model, system_instruction: systemInstruction }),
+            body: JSON.stringify({
+                message,
+                model,
+                system_instruction: systemInstruction,
+                web_search: webSearch,
+            }),
             signal,
         });
     }

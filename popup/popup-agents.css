@@ -5,7 +5,7 @@
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
-    font-family: 'Inter', 'Geist', sans-serif;
+    font-family: var(--font-sans);
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -499,7 +499,7 @@ textarea.form-control {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s;
-    font-family: 'Inter', 'Geist', sans-serif;
+    font-family: var(--font-sans);
 }
 
 .preset-template-btn:hover {

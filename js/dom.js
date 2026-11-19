@@ -59,6 +59,7 @@ export const dom = {
     modelDropdown: query('#modelDropdown'),
     selectedModelText: query('#selectedModelText'),
     modelOptions: Array.from(document.querySelectorAll('.model-option')),
+    webSearchToggle: query('#webSearchToggle'),
     sidebarShell: query('.sidebar-shell'),
     sendBtn: query('.send-btn'),
     sendBtnIcon: query('.send-btn-icon'),

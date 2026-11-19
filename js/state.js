@@ -2,6 +2,7 @@ import { CONFIG } from './config.js';
 
 export const state = {
     currentModel: CONFIG.MODELS.DEFAULT,
+    webSearchEnabled: false,
     isAiResponding: false,
     abortController: null,
     userHasScrolledUp: false,

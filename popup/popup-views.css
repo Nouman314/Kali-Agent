@@ -16,7 +16,7 @@
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
-    font-family: 'Inter', 'Geist', sans-serif;
+    font-family: var(--font-sans);
 }
 
 .grammar-view * {
@@ -85,7 +85,7 @@
     resize: none;
     padding: 14px 16px;
     font-size: 14px;
-    font-family: 'Geist', sans-serif;
+    font-family: var(--font-sans);
     color: #111111;
     line-height: 1.5;
     outline: none;

@@ -24,6 +24,31 @@ function setActiveModel(option) {
     }
 }
 
+export function setWebSearchMode(enabled) {
+    state.webSearchEnabled = Boolean(enabled);
+
+    if (dom.webSearchToggle) {
+        dom.webSearchToggle.classList.toggle('is-active', state.webSearchEnabled);
+        dom.webSearchToggle.setAttribute('aria-pressed', String(state.webSearchEnabled));
+        dom.webSearchToggle.setAttribute(
+            'title',
+            state.webSearchEnabled ? 'Web search is on — click to turn off' : 'Search the web with Google'
+        );
+        dom.webSearchToggle.setAttribute(
+            'aria-label',
+            state.webSearchEnabled ? 'Turn off web search' : 'Search the web with Google'
+        );
+    }
+
+    dom.inputWrapper?.classList.toggle('is-web-search', state.webSearchEnabled);
+
+    if (dom.inputBox) {
+        dom.inputBox.placeholder = state.webSearchEnabled
+            ? 'Search the web...'
+            : 'Ask anything...';
+    }
+}
+
 function updateResizeCursor(event) {
     if (state.isResizing || !dom.inputWrapper || !dom.inputBox) return;
 
@@ -157,6 +182,12 @@ export function bindComposerEvents() {
         dom.modelDropdown.addEventListener('click', handleModelDropdownClick);
     }
 
+    if (dom.webSearchToggle) {
+        dom.webSearchToggle.addEventListener('click', () => {
+            setWebSearchMode(!state.webSearchEnabled);
+        });
+    }
+
     document.addEventListener('click', (event) => {
         if (!dom.modelDropdown || !dom.modelSelectBtn) return;
         if (!dom.modelDropdown.contains(event.target) && !dom.modelSelectBtn.contains(event.target)) {
@@ -185,4 +216,6 @@ export function bindComposerEvents() {
     if (defaultOption) {
         setActiveModel(defaultOption);
     }
+
+    setWebSearchMode(state.webSearchEnabled);
 }

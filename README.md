@@ -17,6 +17,7 @@ Features
 * Integration with Google Gemini models
 * Multi-turn conversation support
 * Model selection for different Gemini variants
+* Web search mode powered by Google Custom Search (free tier: 100 queries/day) with cited source links
 * Message actions include retry, copy, edit, Like/Dislike feedback, and auto-collapsing "Show more" for long user messages.
 * Attach PDFs, DOCX, PPTX, and common image files from the composer
 * Notes library with folders, search, sorting, pinning, archiving, deletion, rich-text editing, local autosave, and Markdown/PDF/DOCX export
@@ -64,6 +65,7 @@ Requirements
 * Google Chrome or any Chromium-based browser
 * Python 3.10 or higher
 * A valid Google Gemini API key
+* Optional: a Google Custom Search API key and search engine ID for web search
 
 ---
 
@@ -82,6 +84,19 @@ GEMINI_API_KEY=your_api_key_here
 
 You can obtain an API key from:
 https://aistudio.google.com/app/apikey
+
+To enable the Web button (web search), add your Google Custom Search credentials:
+
+GOOGLE_SEARCH_API_KEY=your_google_search_api_key
+GOOGLE_SEARCH_ENGINE_ID=your_programmable_search_engine_id
+
+Google Custom Search offers a free tier of 100 queries per day:
+
+* Free tier and API docs: https://developers.google.com/custom-search/v1/overview
+* Create an API key: https://console.cloud.google.com/apis/credentials
+* Create a Programmable Search Engine: https://programmablesearchengine.google.com/controlpanel/create
+
+Get the search engine ID (`cx`) from the Programmable Search Engine control panel after creating it. Enable "Search the entire web" if you want Google-wide results.
 
 ---
 
@@ -108,6 +123,8 @@ http://localhost:5000
 3. Click “Load unpacked.”
 4. Select the project folder.
 
+> Troubleshooting: Chrome refuses to load any unpacked extension containing a file or directory whose name starts with `_` (for example `__pycache__`). If you see that error, delete `__pycache__` from the project folder and reload the extension. Running the backend normally (`python server.py`) does not create it; it only appears if you compile or import `server.py` as a module.
+
 ---
 
 Usage
@@ -117,6 +134,7 @@ Usage
 * Open Notes to create and organize notes. Notes are saved in the browser's local extension storage.
 * Use the plus button to attach up to 5 files per message.
 * Choose a model: Gemini 4 Argon, Gemini 3.8 Flash (default), Gemini 3.6 Flash, or Gemini 3.1 Flash-Lite.
+* Toggle the Web button next to the model selector to search Google and get answers with clickable source links.
 * Use message actions to retry, edit, copy, or provide feedback.
 
 ---
@@ -131,13 +149,24 @@ Request:
 
 {
   "message": "Hello",
-  "model": "gemini-3.8-flash"
+  "model": "gemini-3.8-flash",
+  "web_search": false
+}
+
+Set `web_search` to `true` to run a Google Custom Search before answering. The response then includes the cited sources:
+
+{
+  "reply": "Hello! How can I assist you?",
+  "sources": [
+    { "title": "...", "link": "https://...", "snippet": "..." }
+  ]
 }
 
 Multipart form-data is also supported for attachments:
 
 * `message`: optional text prompt
 * `model`: selected model name
+* `web_search`: `true` or `false`
 * `attachments`: up to 5 files, each up to 10 MB
 
 Supported attachments:
