@@ -608,49 +608,214 @@ function getSourceDomain(url) {
     }
 }
 
-function renderSearchSources(bubble, sources) {
-    if (!Array.isArray(sources) || !sources.length) return;
+function getAllowedImageUrl(value) {
+    try {
+        const url = new URL(value);
+        return url.protocol === 'https:' ? url.href : '';
+    } catch {
+        return '';
+    }
+}
+
+function getAllowedPageUrl(value) {
+    try {
+        const url = new URL(value);
+        return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+    } catch {
+        return '';
+    }
+}
+
+function getSourceFaviconUrl(value) {
+    const pageUrl = getAllowedPageUrl(value);
+    if (!pageUrl) return '';
+    const host = new URL(pageUrl).hostname.replace(/^www\./, '').toLowerCase();
+    return `https://icons.duckduckgo.com/ip3/${encodeURIComponent(host)}.ico`;
+}
+
+function getMatchingSourceImage(source, images) {
+    const sourceUrl = getAllowedPageUrl(source.link);
+    if (!sourceUrl || !Array.isArray(images)) return '';
+
+    const sourceHost = new URL(sourceUrl).hostname.replace(/^www\./, '').toLowerCase();
+    const matchingImage = images.find((image) => {
+        const imagePage = getAllowedPageUrl(image?.link);
+        if (!imagePage) return false;
+        const imageHost = new URL(imagePage).hostname.replace(/^www\./, '').toLowerCase();
+        return sourceHost === imageHost ||
+            sourceHost.endsWith(`.${imageHost}`) ||
+            imageHost.endsWith(`.${sourceHost}`);
+    });
+
+    return getAllowedImageUrl(matchingImage?.image);
+}
+
+function appendSearchImages(section, sources, images, imageSearchError) {
+    const sourcePreviewUrls = new Set(
+        (Array.isArray(sources) ? sources : [])
+            .map((source) => source?.link ? getMatchingSourceImage(source, images) : '')
+            .filter(Boolean)
+    );
+    const validImages = Array.isArray(images)
+        ? images.filter((image) => {
+            const imageUrl = getAllowedImageUrl(image?.image);
+            return imageUrl && !sourcePreviewUrls.has(imageUrl);
+        })
+        : [];
+    if (!validImages.length && !imageSearchError) return;
+
+    const imageSection = document.createElement('div');
+    imageSection.className = 'search-images';
+
+    const heading = document.createElement('div');
+    heading.className = 'search-images-label';
+    heading.textContent = 'Images';
+    imageSection.appendChild(heading);
+
+    if (validImages.length) {
+        const grid = document.createElement('div');
+        grid.className = 'search-images-grid';
+
+        validImages.forEach((result) => {
+            const imageUrl = getAllowedImageUrl(result.image);
+            const imageCard = document.createElement('a');
+            imageCard.className = 'search-image-card';
+            imageCard.href = getAllowedPageUrl(result.link) || imageUrl;
+            imageCard.target = '_blank';
+            imageCard.rel = 'noopener noreferrer';
+
+            const image = document.createElement('img');
+            image.src = imageUrl;
+            image.alt = result.title || 'Search result image';
+            image.loading = 'lazy';
+            image.decoding = 'async';
+            image.referrerPolicy = 'no-referrer';
+            image.addEventListener('error', () => {
+                imageCard.remove();
+                if (!grid.childElementCount && !imageSearchError) {
+                    imageSection.remove();
+                }
+            }, { once: true });
+
+            const caption = document.createElement('span');
+            caption.className = 'search-image-caption';
+            caption.textContent = result.title || result.source || 'View image';
+
+            imageCard.appendChild(image);
+            imageCard.appendChild(caption);
+            grid.appendChild(imageCard);
+        });
+
+        imageSection.appendChild(grid);
+    }
+
+    if (imageSearchError) {
+        const error = document.createElement('div');
+        error.className = 'search-images-error';
+        error.textContent = 'Image previews are unavailable right now.';
+        imageSection.appendChild(error);
+    }
+
+    section.appendChild(imageSection);
+}
+
+function renderSearchSources(bubble, sources, images, imageSearchError) {
+    if ((!Array.isArray(sources) || !sources.length) &&
+        (!Array.isArray(images) || !images.length) &&
+        !imageSearchError) return;
 
     const section = document.createElement('div');
     section.className = 'search-sources';
 
-    const label = document.createElement('div');
-    label.className = 'search-sources-label';
-    label.innerHTML = `${GLOBE_ICON}<span>Web sources</span>`;
-    section.appendChild(label);
+    appendSearchImages(section, sources, images, imageSearchError);
 
-    sources.forEach((source, index) => {
-        if (!source || !source.link) return;
+    if (Array.isArray(sources) && sources.length) {
+        const label = document.createElement('div');
+        label.className = 'search-sources-label';
+        label.innerHTML = `${GLOBE_ICON}<span>Web sources</span>`;
+        section.appendChild(label);
+    }
+
+    const validSources = (Array.isArray(sources) ? sources : [])
+        .map((source) => ({ source, link: getAllowedPageUrl(source?.link) }))
+        .filter(({ source, link }) => source && link);
+
+    validSources.forEach(({ source, link }, index) => {
 
         const chip = document.createElement('a');
         chip.className = 'source-chip';
-        chip.href = source.link;
+        chip.href = link;
         chip.target = '_blank';
         chip.rel = 'noopener noreferrer';
+
+        const preview = document.createElement('span');
+        preview.className = 'source-preview';
+
+        const domainName = getSourceDomain(link);
+        const fallback = document.createElement('span');
+        fallback.className = 'source-preview-fallback';
+        fallback.textContent = domainName.charAt(0).toUpperCase();
+        preview.appendChild(fallback);
+
+        const faviconUrl = getSourceFaviconUrl(link);
+        const previewUrl = getMatchingSourceImage(source, images) || faviconUrl;
+        if (previewUrl) {
+            const previewImage = document.createElement('img');
+            previewImage.className = 'source-preview-image';
+            previewImage.src = previewUrl;
+            previewImage.alt = '';
+            previewImage.loading = 'lazy';
+            previewImage.referrerPolicy = 'no-referrer';
+
+            let usingRelatedImage = previewUrl !== faviconUrl;
+            previewImage.addEventListener('error', () => {
+                if (usingRelatedImage && faviconUrl) {
+                    usingRelatedImage = false;
+                    previewImage.src = faviconUrl;
+                    return;
+                }
+                previewImage.remove();
+            });
+            preview.appendChild(previewImage);
+        }
 
         const number = document.createElement('span');
         number.className = 'source-index';
         number.textContent = String(index + 1);
+        preview.appendChild(number);
 
         const textWrap = document.createElement('span');
         textWrap.className = 'source-text';
 
         const title = document.createElement('span');
         title.className = 'source-title';
-        title.textContent = source.title || getSourceDomain(source.link);
+        title.textContent = source.title || domainName;
 
         const domain = document.createElement('span');
         domain.className = 'source-domain';
-        domain.textContent = getSourceDomain(source.link);
+        domain.textContent = domainName;
 
         textWrap.appendChild(title);
+        if (source.snippet) {
+            const snippet = document.createElement('span');
+            snippet.className = 'source-snippet';
+            snippet.textContent = source.snippet;
+            textWrap.appendChild(snippet);
+        }
         textWrap.appendChild(domain);
-        chip.appendChild(number);
+
+        const openIcon = document.createElement('span');
+        openIcon.className = 'source-open-icon';
+        openIcon.setAttribute('aria-hidden', 'true');
+        openIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5"/></svg>';
+
+        chip.appendChild(preview);
         chip.appendChild(textWrap);
+        chip.appendChild(openIcon);
         section.appendChild(chip);
     });
 
-    if (section.childElementCount > 1) {
+    if (section.childElementCount) {
         bubble.appendChild(section);
     }
 }
@@ -730,7 +895,7 @@ export async function processAiResponse({ text, attachments = [] }) {
         persistConversation();
 
         await typeText(aiBubble, data.reply || '', CONFIG.TYPEWRITER.SPEED_MS, state.abortController.signal);
-        renderSearchSources(aiBubble, data.sources);
+        renderSearchSources(aiBubble, data.sources, data.images, data.image_search_error);
         scrollChatToBottom();
 
         if (aiWrapper) {

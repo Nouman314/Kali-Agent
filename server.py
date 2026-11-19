@@ -8,7 +8,7 @@ Setup:
     3. python server.py  →  http://localhost:5000
 
 POST /chat            { "message": "...", "model": "...", "web_search": false }
-                      →  { "reply": "...", "sources": [...] }
+                      →  { "reply": "...", "sources": [...], "images": [...] }
                       Accepts prior conversation turns in the optional "history" array.
 POST /summarize       { "text": "...", "model": "..." }     →  { "reply": "..." }
 POST /grammar-fix     { "text": "..." }                      →  { "corrected": "..." }
@@ -22,6 +22,7 @@ import io
 import json
 import mimetypes
 import os
+from urllib.parse import urlparse
 from flask       import Flask, request, jsonify
 from flask_cors  import CORS
 from dotenv      import load_dotenv
@@ -319,6 +320,42 @@ def _web_search(query, count=WEB_SEARCH_RESULT_COUNT):
         ) from exc
 
 
+def _web_image_search(query, count=6):
+    """Search DuckDuckGo for HTTPS image thumbnails related to the query."""
+    try:
+        with DDGS() as ddgs:
+            items = ddgs.images(query, max_results=max(1, min(int(count), 10)))
+            results = []
+            for item in items:
+                thumbnail = ""
+                for candidate in (item.get("thumbnail"), item.get("image")):
+                    candidate = (candidate or "").strip()
+                    parsed_candidate = urlparse(candidate)
+                    if parsed_candidate.scheme == "https" and parsed_candidate.netloc:
+                        thumbnail = candidate
+                        break
+                if not thumbnail:
+                    continue
+
+                page_url = (item.get("url") or "").strip()
+                parsed_page_url = urlparse(page_url)
+                if parsed_page_url.scheme not in {"http", "https"} or not parsed_page_url.netloc:
+                    page_url = thumbnail
+
+                results.append({
+                    "title": (item.get("title") or "Image result").strip(),
+                    "image": thumbnail,
+                    "link": page_url,
+                    "source": (item.get("source") or "").strip(),
+                })
+            return results
+    except Exception as exc:
+        raise WebSearchError(
+            f"DuckDuckGo image search failed: {exc}",
+            code="image_search_failed",
+        ) from exc
+
+
 def _format_search_results(query, results):
     if not results:
         return (
@@ -379,6 +416,8 @@ def chat():
         return jsonify({"error": "Message cannot be empty."}), 400
 
     search_results = []
+    image_results = []
+    image_search_error = None
     if use_web_search:
         if not user_message:
             return jsonify({"error": "Web search needs a text query."}), 400
@@ -386,6 +425,11 @@ def chat():
             search_results = _web_search(user_message)
         except WebSearchError as exc:
             return jsonify({"error": str(exc), "code": exc.code}), 400
+        try:
+            image_results = _web_image_search(user_message)
+        except WebSearchError as exc:
+            image_search_error = str(exc)
+            print(f"[WARN] {image_search_error}")
         system_instruction = f"{system_instruction}\n\n{WEB_SEARCH_SYSTEM_INSTRUCTION}"
 
     try:
@@ -424,6 +468,8 @@ def chat():
         return jsonify({
             "reply": reply,
             "sources": search_results,
+            "images": image_results,
+            "image_search_error": image_search_error,
             "history_message": history_message,
         })
 
