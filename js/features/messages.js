@@ -495,9 +495,7 @@ function startThinkingAnimation(bubble, useWebSearch) {
     indicator.className = 'chat-thinking';
     indicator.setAttribute('role', 'status');
     indicator.setAttribute('aria-live', 'polite');
-    indicator.innerHTML = `<span class="chat-thinking-orb" aria-hidden="true"></span>
-        <span class="chat-thinking-label"></span>
-        <span class="chat-thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span>`;
+    indicator.innerHTML = '<span class="chat-thinking-label shimmer-text"></span>';
     bubble.appendChild(indicator);
 
     const label = indicator.querySelector('.chat-thinking-label');

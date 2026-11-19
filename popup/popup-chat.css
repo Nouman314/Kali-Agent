@@ -47,28 +47,30 @@
 
 @keyframes textShimmer {
     0% {
-        background-position: 200% center;
+        background-position: 150% center;
     }
 
     100% {
-        background-position: -100% center;
+        background-position: -50% center;
     }
 }
 
 .shimmer-text {
     display: inline;
-    background: linear-gradient(105deg, #71717a 36%, #a1a1aa 44%, #f4f4f5 50%, #a1a1aa 56%, #71717a 64%);
-    background-size: 220% 100%;
+    background: linear-gradient(100deg, #737373 38%, #737373 44%, #d4d4d4 50%, #737373 56%, #737373 62%);
+    background-size: 250% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: textShimmer 1.8s linear infinite;
+    animation: textShimmer 2.8s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
     .shimmer-text {
         animation: none;
-        background-position: center;
+        background: none;
+        color: #6b7280;
+        -webkit-text-fill-color: currentColor;
     }
 }
 
@@ -255,44 +257,17 @@
     color: #262626;
 }
 
-/* ── Normal chat: lively orb + dot-wave thinking indicator ─────── */
+/* ── Normal chat: shimmer thinking indicator ─────────────────── */
 .chat-thinking {
     display: flex;
     align-items: center;
-    gap: 9px;
     min-height: 22px;
     padding: 1px 0;
-}
-
-.chat-thinking-orb {
-    position: relative;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    background: conic-gradient(from 0deg, #4b3fd8, #8b5cf6, #22d3ee, #4b3fd8);
-    box-shadow: 0 0 12px rgba(75, 63, 216, 0.25);
-    animation: chatOrbSpin 2.4s linear infinite;
-}
-
-.chat-thinking-orb::after {
-    content: '';
-    position: absolute;
-    inset: 4px;
-    border-radius: 50%;
-    background: #ffffff;
-}
-
-@keyframes chatOrbSpin {
-    to {
-        transform: rotate(360deg);
-    }
 }
 
 .chat-thinking-label {
     font-size: 14px;
     font-weight: 500;
-    color: #6b7280;
     letter-spacing: -0.01em;
 }
 
@@ -309,43 +284,6 @@
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-
-.chat-thinking-dots {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-}
-
-.chat-thinking-dots i {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: #a5a3f5;
-    animation: chatDotWave 1.2s ease-in-out infinite;
-}
-
-.chat-thinking-dots i:nth-child(2) {
-    animation-delay: 0.15s;
-}
-
-.chat-thinking-dots i:nth-child(3) {
-    animation-delay: 0.3s;
-}
-
-@keyframes chatDotWave {
-
-    0%,
-    60%,
-    100% {
-        transform: translateY(0);
-        opacity: 0.45;
-    }
-
-    30% {
-        transform: translateY(-4px);
-        opacity: 1;
     }
 }
 
@@ -478,8 +416,6 @@
 
 @media (prefers-reduced-motion: reduce) {
 
-    .chat-thinking-orb,
-    .chat-thinking-dots i,
     .search-thinking-icon svg,
     .chat-thinking-label.chat-label-anim {
         animation: none;
