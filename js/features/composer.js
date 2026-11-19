@@ -2,7 +2,7 @@ import { CONFIG } from '../config.js';
 import { dom } from '../dom.js';
 import { resetChatSession } from '../services/chatApi.js';
 import { addAttachments, clearAttachments, showAttachmentError } from './attachments.js';
-import { renderEmptyState, resetComposerHeight, sendMessage } from './messages.js';
+import { clearConversation, resetComposerHeight, sendMessage } from './messages.js';
 import { state } from '../state.js';
 
 let composerBound = false;
@@ -73,7 +73,7 @@ function tryStartResize(event) {
 function resetConversation() {
     if (state.isAiResponding) return;
 
-    renderEmptyState();
+    clearConversation();
     state.userHasScrolledUp = false;
     if (dom.inputBox) {
         dom.inputBox.value = '';

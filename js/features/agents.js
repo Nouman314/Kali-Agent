@@ -1,7 +1,7 @@
 import { dom } from '../dom.js';
 import { state } from '../state.js';
 import { resetChatSession } from '../services/chatApi.js';
-import { renderEmptyState } from './messages.js';
+import { clearConversation } from './messages.js';
 import { goToChat } from './navigation.js';
 
 let agentsBound = false;
@@ -238,12 +238,8 @@ export function activateAgent(agent) {
     }
 
     // Reset Chat session to clear context and apply new system instructions
-    resetChatSession().then(() => {
-        if (dom.chatArea) {
-            dom.chatArea.innerHTML = '';
-            renderEmptyState();
-        }
-    });
+    clearConversation();
+    resetChatSession();
 
     renderAgents();
     goToChat();
@@ -256,12 +252,8 @@ export function deactivateAgent() {
         dom.activeAgentBadge.style.display = 'none';
     }
 
-    resetChatSession().then(() => {
-        if (dom.chatArea) {
-            dom.chatArea.innerHTML = '';
-            renderEmptyState();
-        }
-    });
+    clearConversation();
+    resetChatSession();
 
     renderAgents();
 }

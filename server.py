@@ -9,15 +9,17 @@ Setup:
 
 POST /chat            { "message": "...", "model": "...", "web_search": false }
                       →  { "reply": "...", "sources": [...] }
+                      Accepts prior conversation turns in the optional "history" array.
 POST /summarize       { "text": "...", "model": "..." }     →  { "reply": "..." }
 POST /grammar-fix     { "text": "..." }                      →  { "corrected": "..." }
 POST /workspace-chat  multipart: message, model, attachments →  { "reply": "..." }
 POST /workspace-reset Clears the Workspace tab's document-chat history
-POST /reset           Clears the main Chat tab's conversation history
+POST /reset           Compatibility endpoint; the client owns main Chat history
 GET  /health          Returns server status
 """
 
 import io
+import json
 import mimetypes
 import os
 from flask       import Flask, request, jsonify
@@ -49,6 +51,8 @@ summary_client = genai.Client(
 )
 
 WEB_SEARCH_RESULT_COUNT = 5
+MAX_CHAT_HISTORY_MESSAGES = 100
+MAX_CHAT_HISTORY_CHARS = 200_000
 
 
 class WebSearchError(Exception):
@@ -112,9 +116,6 @@ SUPPORTED_ATTACHMENT_EXTENSIONS = {
     ".webp",
     ".bmp",
 }
-
-# Holds multi-turn conversation context in memory
-conversation_history = []
 
 # Separate history for the Workspace (document-chat) tab so it never
 # bleeds into — or gets cleared by — the main Chat tab's conversation.
@@ -273,6 +274,28 @@ def _as_bool(value):
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _normalize_chat_history(history):
+    if not isinstance(history, list):
+        raise ValueError("Chat history must be a list.")
+
+    normalized = []
+    total_chars = 0
+    for entry in reversed(history[-MAX_CHAT_HISTORY_MESSAGES:]):
+        if not isinstance(entry, dict):
+            raise ValueError("Each chat history entry must be an object.")
+        role = entry.get("role")
+        text = entry.get("text")
+        if not isinstance(role, str) or role not in {"user", "model"} or not isinstance(text, str):
+            raise ValueError("Chat history entries need a user/model role and text.")
+        if total_chars + len(text) > MAX_CHAT_HISTORY_CHARS:
+            break
+        normalized.append({"role": role, "text": text})
+        total_chars += len(text)
+
+    normalized.reverse()
+    return normalized
+
+
 def _web_search(query, count=WEB_SEARCH_RESULT_COUNT):
     """Search the web with DuckDuckGo and return normalized source results."""
     try:
@@ -330,6 +353,10 @@ def chat():
         system_instruction = request.form.get("system_instruction") or SYSTEM_INSTRUCTION
         upload_files = request.files.getlist("attachments")
         use_web_search = _as_bool(request.form.get("web_search"))
+        try:
+            chat_history = json.loads(request.form.get("history", "[]"))
+        except json.JSONDecodeError:
+            return jsonify({"error": "Chat history must be valid JSON."}), 400
     else:
         data = request.get_json(silent=True) or {}
 
@@ -341,6 +368,12 @@ def chat():
         system_instruction = data.get("system_instruction") or SYSTEM_INSTRUCTION
         use_web_search = _as_bool(data.get("web_search"))
         upload_files = []
+        chat_history = data.get("history", [])
+
+    try:
+        chat_history = _normalize_chat_history(chat_history)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
     if not user_message and not upload_files:
         return jsonify({"error": "Message cannot be empty."}), 400
@@ -358,7 +391,7 @@ def chat():
     try:
         contents = [
             genai.types.Content(role=entry["role"], parts=[genai.types.Part(text=entry["text"])])
-            for entry in conversation_history
+            for entry in chat_history
         ]
 
         attachment_parts, history_message, attachment_error = _build_attachment_context(upload_files, user_message)
@@ -388,10 +421,11 @@ def chat():
         )
 
         reply = response.text or ""
-        conversation_history.append({"role": "user",  "text": history_message})
-        conversation_history.append({"role": "model", "text": reply})
-
-        return jsonify({"reply": reply, "sources": search_results})
+        return jsonify({
+            "reply": reply,
+            "sources": search_results,
+            "history_message": history_message,
+        })
 
     except Exception as e:
         print(f"[ERROR] Gemini API call failed: {e}")
@@ -439,8 +473,8 @@ def summarize():
 def grammar_fix():
     """
     Stateless, single-turn grammar correction.
-    Intentionally does NOT touch conversation_history — this is a separate
-    feature from the Chat tab and shouldn't bleed into chat context.
+    Intentionally does NOT touch the main Chat tab — this is a separate
+    feature and shouldn't bleed into chat context.
     """
     data = request.get_json(silent=True) or {}
     text = (data.get("text") or "").strip()
@@ -473,7 +507,7 @@ def workspace_chat():
     """
     Document-chat used by the Workspace tab. Keeps its own conversation
     history (workspace_conversation_history), completely separate from the
-    main Chat tab's `conversation_history` and from grammar-fix, so
+    client-managed main Chat tab and from grammar-fix, so
     switching between tabs never bleeds context into each other.
 
     The frontend only attaches the file on the FIRST message of a session —
@@ -542,8 +576,7 @@ def workspace_reset():
 
 @app.route("/reset", methods=["POST"])
 def reset():
-    conversation_history.clear()
-    return jsonify({"status": "ok", "message": "Conversation history cleared."})
+    return jsonify({"status": "ok", "message": "Main chat history is managed by the client."})
 
 
 @app.route("/health", methods=["GET"])

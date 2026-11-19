@@ -12,6 +12,7 @@ export async function sendChatRequest({
     message,
     model,
     attachments = [],
+    history = [],
     signal,
     systemInstruction,
     webSearch = false,
@@ -24,6 +25,7 @@ export async function sendChatRequest({
         formData.append('message', message);
         formData.append('model', model);
         formData.append('web_search', webSearch ? 'true' : 'false');
+        formData.append('history', JSON.stringify(history));
         if (systemInstruction) {
             formData.append('system_instruction', systemInstruction);
         }
@@ -43,6 +45,7 @@ export async function sendChatRequest({
             body: JSON.stringify({
                 message,
                 model,
+                history,
                 system_instruction: systemInstruction,
                 web_search: webSearch,
             }),

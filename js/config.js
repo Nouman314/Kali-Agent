@@ -46,7 +46,6 @@ export const CONFIG = {
         CHUNK_SIZE: 5,
         SPEED_MS: 1,
     },
-    CHAT_PHRASES: ['Thinking', 'Reasoning', 'Drafting'],
     SEARCH_PHRASES: [
         'Searching the web...',
         'Thinking...',

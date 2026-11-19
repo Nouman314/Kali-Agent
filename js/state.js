@@ -12,6 +12,7 @@ export const state = {
     attachedFiles: [],
     attachmentIdCounter: 0,
     activeAgent: null, // Tracks selected agent { id, name, systemInstruction, icon }
+    messages: [], // Current chat transcript, persisted locally and sent as model context
     workspace: {
         activeType: null, // 'pdf' | 'ppt' | 'docx' | 'xlsx' | 'txt' | 'md'
         file: null, // The uploaded File object

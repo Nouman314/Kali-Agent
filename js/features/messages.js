@@ -5,6 +5,27 @@ import { clearAttachments, createAttachmentChip, buildUserBubbleText } from './a
 import { state } from '../state.js';
 
 let chatBound = false;
+const CHAT_STORAGE_KEY = 'kali_chat_history';
+const MAX_CONTEXT_MESSAGES = 100;
+const MAX_CONTEXT_CHARS = 200000;
+
+function trimConversation(messages) {
+    const trimmed = messages.slice(-MAX_CONTEXT_MESSAGES);
+    let totalChars = trimmed.reduce(
+        (total, message) => total + (message.contextText || message.text).length,
+        0
+    );
+
+    while (
+        trimmed.length > 1 &&
+        (totalChars > MAX_CONTEXT_CHARS || trimmed[0].role !== 'user')
+    ) {
+        const oldestMessage = trimmed.shift();
+        totalChars -= (oldestMessage.contextText || oldestMessage.text).length;
+    }
+
+    return trimmed;
+}
 
 function scrollChatToBottom() {
     if (!dom.chatArea || state.userHasScrolledUp) return;
@@ -26,6 +47,72 @@ function highlightCodeBlocks(root) {
 export function renderEmptyState() {
     if (!dom.chatArea || !dom.emptyStateHTML) return;
     dom.chatArea.innerHTML = dom.emptyStateHTML;
+}
+
+function persistConversation() {
+    try {
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(trimConversation(state.messages)));
+    } catch (error) {
+        console.error('[Kali Agent] Failed to save chat history:', error);
+    }
+}
+
+export function clearConversation() {
+    state.messages = [];
+    try {
+        localStorage.removeItem(CHAT_STORAGE_KEY);
+    } catch (error) {
+        console.error('[Kali Agent] Failed to clear chat history:', error);
+    }
+    renderEmptyState();
+}
+
+export function restoreConversation() {
+    try {
+        const stored = localStorage.getItem(CHAT_STORAGE_KEY);
+        if (!stored) {
+            state.messages = [];
+            renderEmptyState();
+            return;
+        }
+
+        const parsed = JSON.parse(stored);
+        if (!Array.isArray(parsed)) throw new TypeError('Saved chat history must be an array');
+        state.messages = parsed.filter((message) =>
+            message &&
+            ['user', 'ai'].includes(message.role) &&
+            typeof message.text === 'string'
+        ).map((message) => ({
+            role: message.role,
+            text: message.text,
+            rawText: typeof message.rawText === 'string' ? message.rawText : message.text,
+            contextText: typeof message.contextText === 'string' ? message.contextText : message.text,
+        }));
+
+        if (state.messages.length !== parsed.length) {
+            console.warn('[Kali Agent] Invalid entries in saved chat history were skipped.');
+        }
+
+        if (!state.messages.length) {
+            renderEmptyState();
+            return;
+        }
+
+        state.messages.forEach((message, index) => {
+            const bubble = appendBubble(
+                message.text,
+                message.role,
+                true,
+                message.text,
+                message.rawText
+            );
+            bubble._wrapper.dataset.conversationIndex = String(index);
+        });
+    } catch (error) {
+        console.error('[Kali Agent] Failed to restore chat history:', error);
+        state.messages = [];
+        renderEmptyState();
+    }
 }
 
 export function hideEmptyState() {
@@ -343,6 +430,12 @@ function beginBubbleEdit(wrapper, bubble, actions) {
         const displayText = buildUserBubbleText(newText, originalAttachments);
         restoreEditableBubble(bubble, actions, displayText, originalAttachments);
 
+        const conversationIndex = Number(wrapper.dataset.conversationIndex);
+        if (Number.isInteger(conversationIndex) && conversationIndex >= 0) {
+            state.messages = state.messages.slice(0, conversationIndex);
+            persistConversation();
+        }
+
         let next = wrapper.nextElementSibling;
         while (next) {
             const temp = next;
@@ -361,6 +454,12 @@ function retryLastMessage(button, wrapper) {
     const lastUserText = lastUserBubble?.dataset.rawText || lastUserBubble?.textContent;
 
     if (!lastUserText || !lastUserWrapper) return;
+
+    const conversationIndex = Number(lastUserWrapper.dataset.conversationIndex);
+    if (Number.isInteger(conversationIndex) && conversationIndex >= 0) {
+        state.messages = state.messages.slice(0, conversationIndex);
+        persistConversation();
+    }
 
     wrapper.remove();
     lastUserWrapper.remove();
@@ -490,29 +589,15 @@ function startThinkingAnimation(bubble, useWebSearch) {
         return () => clearInterval(timer);
     }
 
-    const phrases = CONFIG.CHAT_PHRASES;
     const indicator = document.createElement('div');
     indicator.className = 'chat-thinking';
     indicator.setAttribute('role', 'status');
     indicator.setAttribute('aria-live', 'polite');
-    indicator.innerHTML = '<span class="chat-thinking-label shimmer-text"></span>';
+    indicator.setAttribute('aria-label', 'Thinking');
+    indicator.innerHTML = '<span class="chat-thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
     bubble.appendChild(indicator);
 
-    const label = indicator.querySelector('.chat-thinking-label');
-    const renderLabel = (text) => {
-        label.classList.remove('chat-label-anim');
-        void label.offsetWidth;
-        label.textContent = `${text}…`;
-        label.classList.add('chat-label-anim');
-    };
-
-    renderLabel(phrases[0]);
-    const timer = setInterval(() => {
-        phraseIndex = (phraseIndex + 1) % phrases.length;
-        renderLabel(phrases[phraseIndex]);
-    }, 2400);
-
-    return () => clearInterval(timer);
+    return () => indicator.remove();
 }
 
 function getSourceDomain(url) {
@@ -600,10 +685,16 @@ export async function processAiResponse({ text, attachments = [] }) {
     let stopThinking = startThinkingAnimation(aiBubble, useWebSearch);
 
     try {
+        const history = trimConversation(state.messages).map((message) => ({
+            role: message.role === 'ai' ? 'model' : 'user',
+            text: message.contextText || message.text,
+        }));
+
         const { response, data, ok } = await sendChatRequest({
             message: text,
             model: state.currentModel,
             attachments,
+            history,
             signal: state.abortController.signal,
             systemInstruction: state.activeAgent?.systemInstruction || undefined,
             webSearch: useWebSearch,
@@ -619,6 +710,25 @@ export async function processAiResponse({ text, attachments = [] }) {
         }
 
         aiBubble.dataset.rawText = data.reply || '';
+        const userWrapper = aiWrapper?.previousElementSibling;
+        const conversationIndex = state.messages.length;
+        const userDisplayText = buildUserBubbleText(text, attachments);
+        state.messages.push(
+            {
+                role: 'user',
+                text: userDisplayText,
+                rawText: text.trim() || userDisplayText,
+                contextText: typeof data.history_message === 'string'
+                    ? data.history_message
+                    : text.trim() || userDisplayText,
+            },
+            { role: 'ai', text: data.reply || '', rawText: data.reply || '', contextText: data.reply || '' }
+        );
+        if (userWrapper?.classList.contains('message-wrapper--user')) {
+            userWrapper.dataset.conversationIndex = String(conversationIndex);
+        }
+        persistConversation();
+
         await typeText(aiBubble, data.reply || '', CONFIG.TYPEWRITER.SPEED_MS, state.abortController.signal);
         renderSearchSources(aiBubble, data.sources);
         scrollChatToBottom();

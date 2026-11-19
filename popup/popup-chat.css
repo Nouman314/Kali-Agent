@@ -257,7 +257,7 @@
     color: #262626;
 }
 
-/* ── Normal chat: shimmer thinking indicator ─────────────────── */
+/* ── Normal chat: three-dot thinking indicator ───────────────── */
 .chat-thinking {
     display: flex;
     align-items: center;
@@ -265,25 +265,39 @@
     padding: 1px 0;
 }
 
-.chat-thinking-label {
-    font-size: 14px;
-    font-weight: 500;
-    letter-spacing: -0.01em;
+.chat-thinking-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.chat-thinking-label.chat-label-anim {
-    animation: chatLabelIn 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+.chat-thinking-dots i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #8b8b8b;
+    animation: chatDotWave 1.2s ease-in-out infinite;
 }
 
-@keyframes chatLabelIn {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
+.chat-thinking-dots i:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.chat-thinking-dots i:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes chatDotWave {
+    0%,
+    60%,
+    100% {
+        opacity: 0.45;
+        transform: translateY(0);
     }
 
-    to {
+    30% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(-4px);
     }
 }
 
@@ -416,8 +430,8 @@
 
 @media (prefers-reduced-motion: reduce) {
 
-    .search-thinking-icon svg,
-    .chat-thinking-label.chat-label-anim {
+    .chat-thinking-dots i,
+    .search-thinking-icon svg {
         animation: none;
     }
 
