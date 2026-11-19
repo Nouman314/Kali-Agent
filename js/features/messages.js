@@ -455,11 +455,6 @@ const GLOBE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
     <path d="M12 3a14.5 14.5 0 0 1 0 18a14.5 14.5 0 0 1 0-18z"></path>
 </svg>`;
 
-const EXTERNAL_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M7 17L17 7"></path>
-    <path d="M8 7h9v9"></path>
-</svg>`;
-
 function startThinkingAnimation(bubble, useWebSearch) {
     let phraseIndex = 0;
     bubble.innerHTML = '';
@@ -584,22 +579,6 @@ function renderErrorState(bubble, data) {
     message.className = 'chat-error';
     message.textContent = `⚠️ ${data?.error || 'Server error'}`;
     bubble.appendChild(message);
-
-    if (data?.code !== 'web_search_not_configured') return;
-
-    const setup = document.createElement('div');
-    setup.className = 'search-setup';
-    setup.innerHTML = `
-        <div class="search-setup-title">${SEARCH_ICON}<span>Enable free web search</span></div>
-        <div>Google Custom Search includes <strong>100 free searches per day</strong>. Add
-            <code>GOOGLE_SEARCH_API_KEY</code> and <code>GOOGLE_SEARCH_ENGINE_ID</code> to
-            <code>.env</code>, then restart <code>server.py</code>.</div>
-        <div class="search-setup-links">
-            <a href="${CONFIG.WEB_SEARCH.CONSOLE_URL}" target="_blank" rel="noopener noreferrer">Get API key ${EXTERNAL_ICON}</a>
-            <a href="${CONFIG.WEB_SEARCH.ENGINE_URL}" target="_blank" rel="noopener noreferrer">Create search engine ${EXTERNAL_ICON}</a>
-            <a href="${CONFIG.WEB_SEARCH.API_DOCS_URL}" target="_blank" rel="noopener noreferrer">Free tier docs ${EXTERNAL_ICON}</a>
-        </div>`;
-    bubble.appendChild(setup);
 }
 
 export async function processAiResponse({ text, attachments = [] }) {

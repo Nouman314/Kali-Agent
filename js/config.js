@@ -62,14 +62,6 @@ export const CONFIG = {
         'Generating...',
         'Almost there...',
     ],
-    WEB_SEARCH: {
-        MAX_RESULTS: 5,
-        // Google Custom Search JSON API — free tier: 100 queries/day.
-        // https://developers.google.com/custom-search/v1/overview
-        API_DOCS_URL: 'https://developers.google.com/custom-search/v1/overview',
-        ENGINE_URL: 'https://programmablesearchengine.google.com/controlpanel/create',
-        CONSOLE_URL: 'https://console.cloud.google.com/apis/credentials',
-    },
 };
 
 export function configureMarkdownRenderer() {

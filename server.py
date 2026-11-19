@@ -18,16 +18,13 @@ GET  /health          Returns server status
 """
 
 import io
-import json
 import mimetypes
 import os
-import urllib.error
-import urllib.parse
-import urllib.request
 from flask       import Flask, request, jsonify
 from flask_cors  import CORS
 from dotenv      import load_dotenv
 from google      import genai
+from ddgs        import DDGS
 from PyPDF2      import PdfReader
 from docx        import Document
 from pptx        import Presentation
@@ -51,13 +48,6 @@ summary_client = genai.Client(
     http_options=genai.types.HttpOptions(timeout=60_000),
 )
 
-# ── Google Programmable Search (free tier: 100 queries/day) ─────
-# API key:  https://console.cloud.google.com/apis/credentials
-# Engine:   https://programmablesearchengine.google.com/controlpanel/create
-# Docs:     https://developers.google.com/custom-search/v1/overview
-GOOGLE_SEARCH_API_KEY = os.getenv("GOOGLE_SEARCH_API_KEY", "").strip()
-GOOGLE_SEARCH_ENGINE_ID = os.getenv("GOOGLE_SEARCH_ENGINE_ID", "").strip()
-GOOGLE_SEARCH_ENDPOINT = "https://www.googleapis.com/customsearch/v1"
 WEB_SEARCH_RESULT_COUNT = 5
 
 
@@ -283,72 +273,27 @@ def _as_bool(value):
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _web_search_configured():
-    return bool(GOOGLE_SEARCH_API_KEY and GOOGLE_SEARCH_ENGINE_ID)
-
-
-def _google_web_search(query, count=WEB_SEARCH_RESULT_COUNT):
-    """Query the Google Custom Search JSON API (100 free queries/day)."""
-    if not _web_search_configured():
-        raise WebSearchError(
-            "Web search is not configured yet. Add GOOGLE_SEARCH_API_KEY and "
-            "GOOGLE_SEARCH_ENGINE_ID to .env, then restart server.py. Google "
-            "Custom Search includes 100 free queries per day.",
-            code="web_search_not_configured",
-        )
-
-    params = urllib.parse.urlencode({
-        "key": GOOGLE_SEARCH_API_KEY,
-        "cx": GOOGLE_SEARCH_ENGINE_ID,
-        "q": query,
-        "num": max(1, min(int(count), 10)),
-        "safe": "off",
-    })
-    search_request = urllib.request.Request(
-        f"{GOOGLE_SEARCH_ENDPOINT}?{params}",
-        headers={"User-Agent": "KaliAgent/1.0"},
-    )
-
+def _web_search(query, count=WEB_SEARCH_RESULT_COUNT):
+    """Search the web with DuckDuckGo and return normalized source results."""
     try:
-        with urllib.request.urlopen(search_request, timeout=12) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        detail = ""
-        try:
-            detail = exc.read().decode("utf-8", errors="replace")[:300]
-        except Exception:
-            pass
-
-        if exc.code == 429:
-            raise WebSearchError(
-                "Google search quota reached (the free tier allows 100 queries per "
-                "day). Try again tomorrow or enable billing in Google Cloud.",
-                code="web_search_quota",
-            ) from exc
-
-        message = f"Google search failed (HTTP {exc.code})."
-        if detail:
-            message = f"{message} {detail}"
-        raise WebSearchError(message, code="web_search_failed") from exc
+        with DDGS() as ddgs:
+            items = ddgs.text(query, max_results=max(1, min(int(count), 10)))
+            results = []
+            for item in items:
+                link = (item.get("href") or "").strip()
+                if not link:
+                    continue
+                results.append({
+                    "title": (item.get("title") or link).strip(),
+                    "link": link,
+                    "snippet": " ".join((item.get("body") or "").split()),
+                })
+            return results
     except Exception as exc:
         raise WebSearchError(
-            f"Could not reach Google search: {exc}",
+            f"DuckDuckGo search failed: {exc}",
             code="web_search_failed",
         ) from exc
-
-    items = payload.get("items") or []
-    results = []
-    for item in items[:count]:
-        link = (item.get("link") or "").strip()
-        if not link:
-            continue
-        results.append({
-            "title": (item.get("title") or link).strip(),
-            "link": link,
-            "snippet": " ".join((item.get("snippet") or "").split()),
-        })
-
-    return results
 
 
 def _format_search_results(query, results):
@@ -405,7 +350,7 @@ def chat():
         if not user_message:
             return jsonify({"error": "Web search needs a text query."}), 400
         try:
-            search_results = _google_web_search(user_message)
+            search_results = _web_search(user_message)
         except WebSearchError as exc:
             return jsonify({"error": str(exc), "code": exc.code}), 400
         system_instruction = f"{system_instruction}\n\n{WEB_SEARCH_SYSTEM_INSTRUCTION}"
@@ -607,9 +552,8 @@ def health():
         "status": "ok",
         "model": DEFAULT_MODEL,
         "web_search": {
-            "configured": _web_search_configured(),
-            "free_queries_per_day": 100,
-            "docs": "https://developers.google.com/custom-search/v1/overview",
+            "configured": True,
+            "provider": "DuckDuckGo",
         },
     })
 
