@@ -67,9 +67,12 @@ class WebSearchError(Exception):
 
 DEFAULT_MODEL = "gemini-3.1-flash-lite"
 SUMMARY_SYSTEM_INSTRUCTION = (
-    "Summarize the user's note in a few concise bullet points. Keep the note's "
-    "language and preserve its key facts, decisions, and action items. Return "
-    "only the summary, without an introduction."
+    "Summarize the user's note in up to five concise Markdown bullet points; use "
+    "fewer when the note is brief. Keep the note's language and preserve its key "
+    "facts, names, decisions, and action items. Use bold labels sparingly when they "
+    "improve scanning. Include only information supported by the note; do not infer "
+    "missing details or pad the summary. Return only the bullet points, with no "
+    "title, introduction, conclusion, or code fence."
 )
 SYSTEM_INSTRUCTION = (
     "You are Kali Agent, a helpful and intelligent AI assistant "

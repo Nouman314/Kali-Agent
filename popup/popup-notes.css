@@ -1049,6 +1049,34 @@
     white-space: pre-line;
 }
 
+.notes-editor-body .notes-summary-content > :first-child {
+    margin-top: 0;
+}
+
+.notes-editor-body .notes-summary-content {
+    color: #5b5968;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.notes-editor-body .notes-summary-content strong {
+    color: #393744;
+}
+
+.notes-editor-body .notes-summary-content > :last-child {
+    margin-bottom: 8px;
+}
+
+.notes-editor-body .notes-summary-content ul,
+.notes-editor-body .notes-summary-content ol {
+    margin-bottom: 8px;
+    padding-left: 18px;
+}
+
+.notes-editor-body .notes-summary-content li {
+    margin-bottom: 3px;
+}
+
 .notes-editor-body ul,
 .notes-editor-body ol {
     margin: 0 0 15px;

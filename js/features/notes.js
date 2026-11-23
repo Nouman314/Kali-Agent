@@ -72,7 +72,7 @@ function loadNotes() {
         return parsed.filter((note) => note && typeof note.id === 'string' && !STARTER_NOTE_IDS.has(note.id)).map((note) => ({
             ...note,
             title: typeof note.title === 'string' ? note.title : '',
-            content: sanitizeContent(typeof note.content === 'string' ? note.content : ''),
+            content: normalizeSummaryDrafts(sanitizeContent(typeof note.content === 'string' ? note.content : '')),
             tags: Array.isArray(note.tags) ? note.tags.filter((tag) => typeof tag === 'string') : [],
             folder: ['study', 'work', 'chat'].includes(note.folder) ? note.folder : 'chat',
             source: ['chat', 'web', 'file'].includes(note.source) ? note.source : 'chat',
@@ -101,7 +101,7 @@ function sanitizeContent(html) {
 
         const safe = document.createElement(node.tagName.toLowerCase());
         if (node.tagName === 'DIV' || node.tagName === 'SPAN') {
-            const allowedClasses = ['notes-checklist', 'notes-checklist-item', 'notes-summary-draft'];
+            const allowedClasses = ['notes-checklist', 'notes-checklist-item', 'notes-summary-draft', 'notes-summary-content'];
             const classes = Array.from(node.classList).filter((className) => allowedClasses.includes(className));
             if (classes.length) safe.className = classes.join(' ');
         }
@@ -124,6 +124,40 @@ function sanitizeContent(html) {
     const wrapper = document.createElement('div');
     Array.from(parsed.body.childNodes).forEach((node) => wrapper.appendChild(cleanNode(node)));
     return wrapper.innerHTML;
+}
+
+function parseSummaryMarkdown(markdown) {
+    if (typeof marked === 'undefined' || typeof marked.parse !== 'function') return null;
+    const normalized = markdown.trim().replace(/^```(?:markdown|md)?\s*\r?\n([\s\S]*?)\r?\n```$/i, '$1').trim();
+    return sanitizeContent(marked.parse(normalized));
+}
+
+function normalizeSummaryDrafts(content) {
+    const container = document.createElement('div');
+    container.innerHTML = sanitizeContent(content);
+    let changed = false;
+
+    container.querySelectorAll('.notes-summary-draft').forEach((section) => {
+        if (section.querySelector('.notes-summary-content')) return;
+        const summaryText = Array.from(section.children)
+            .filter((child) => child.tagName !== 'H2')
+            .map((child) => child.textContent || '')
+            .join('\n')
+            .trim();
+        const renderedSummary = parseSummaryMarkdown(summaryText);
+        if (renderedSummary === null) return;
+
+        const summaryContent = document.createElement('div');
+        summaryContent.className = 'notes-summary-content';
+        summaryContent.innerHTML = renderedSummary;
+        Array.from(section.children)
+            .filter((child) => child.tagName !== 'H2')
+            .forEach((child) => child.remove());
+        section.appendChild(summaryContent);
+        changed = true;
+    });
+
+    return changed ? sanitizeContent(container.innerHTML) : container.innerHTML;
 }
 
 function persistNotes() {
@@ -742,23 +776,31 @@ function setSummaryButtonBusy(isBusy) {
 function insertSummaryIntoContent(content, summary) {
     const container = document.createElement('div');
     container.innerHTML = sanitizeContent(content);
-    container.querySelector('.notes-summary-draft')?.remove();
+    container.querySelectorAll('.notes-summary-draft').forEach((draft) => draft.remove());
 
     const section = document.createElement('div');
     section.className = 'notes-summary-draft';
     const heading = document.createElement('h2');
     heading.textContent = 'AI summary';
-    const paragraph = document.createElement('p');
-    paragraph.textContent = summary;
-    section.append(heading, paragraph);
+    const summaryContent = document.createElement('div');
+    summaryContent.className = 'notes-summary-content';
+    const renderedSummary = parseSummaryMarkdown(summary);
+    if (renderedSummary === null) {
+        throw new Error('Summary formatting is unavailable. Reload the extension and try again.');
+    }
+    summaryContent.innerHTML = renderedSummary;
+    section.append(heading, summaryContent);
     container.prepend(section);
     return sanitizeContent(container.innerHTML);
 }
 
 async function addSummaryDraft() {
     const note = notes.find((entry) => entry.id === selectedNoteId);
-    const text = (elements.editor.innerText || '').trim();
     if (!note) return;
+
+    const sourceEditor = elements.editor.cloneNode(true);
+    sourceEditor.querySelectorAll('.notes-summary-draft').forEach((draft) => draft.remove());
+    const text = plainText(sourceEditor.innerHTML);
     if (!text) {
         showTransientStatus('Add note content before summarizing', true);
         return;
