@@ -14,6 +14,7 @@ Features
 
 * Chrome Extension built with Manifest V3
 * Side panel chat interface
+* Coding workspace for Rust, Python, JavaScript, and TypeScript with source capture, before/after review, and copyable results
 * Integration with Google Gemini models
 * Multi-turn conversation support
 * Model selection for different Gemini variants
@@ -35,6 +36,7 @@ Project Structure
 │   ├── popup-base.css
 │   ├── popup-chat.css
 │   ├── popup-input.css
+│   ├── popup-coding.css
 │   └── popup-notes.css
 ├── server.py
 ├── requirements.txt
@@ -52,6 +54,7 @@ Project Structure
 │   │   └── chatApi.js
 │   └── features/
 │       ├── attachments.js
+│       ├── coding.js
 │       ├── composer.js
 │       ├── notes.js
 │       ├── messages.js
@@ -118,6 +121,7 @@ http://localhost:5000
 Usage
 
 * Open the extension side panel.
+* Open Coding to paste code, load a code file, or explicitly capture the current page; review the generated result before copying it. Coding never applies changes to a page or file.
 * Enter a message and submit it.
 * Open Notes to create and organize notes. Notes are saved in the browser's local extension storage.
 * Use the plus button to attach up to 5 files per message.

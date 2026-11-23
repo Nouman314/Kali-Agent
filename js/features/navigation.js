@@ -4,6 +4,7 @@ let navigationBound = false;
 
 const VIEW_MAP = {
     chat: dom.chatView,
+    coding: dom.codingView,
     grammar: dom.grammarView,
     notes: dom.notesView,
     workspace: dom.workspaceView,

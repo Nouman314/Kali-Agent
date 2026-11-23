@@ -14,16 +14,16 @@ function setActiveModel(option) {
     const selectedOption = dom.modelOptions.find((item) => item.getAttribute('data-model') === state.currentModel);
     const optionDot = selectedOption?.querySelector('.model-dot');
 
-    [dom.selectedModelText, dom.workspaceSelectedModelText].forEach((label) => {
+    [dom.selectedModelText, dom.workspaceSelectedModelText, dom.codingSelectedModelText].forEach((label) => {
         if (label) label.textContent = selectedModelText;
     });
 
-    [dom.modelSelectBtn, dom.workspaceModelSelectBtn].forEach((button) => {
+    [dom.modelSelectBtn, dom.workspaceModelSelectBtn, dom.codingModelSelectBtn].forEach((button) => {
         const dot = button?.querySelector('.model-dot');
         if (dot && optionDot) dot.style.background = optionDot.style.background;
     });
 
-    [dom.modelDropdown, dom.workspaceModelDropdown].forEach((dropdown) => {
+    [dom.modelDropdown, dom.workspaceModelDropdown, dom.codingModelDropdown].forEach((dropdown) => {
         if (dropdown) dropdown.style.display = 'none';
     });
 }
@@ -31,25 +31,34 @@ function setActiveModel(option) {
 export function setWebSearchMode(enabled) {
     state.webSearchEnabled = Boolean(enabled);
 
-    if (dom.webSearchToggle) {
-        dom.webSearchToggle.classList.toggle('is-active', state.webSearchEnabled);
-        dom.webSearchToggle.setAttribute('aria-pressed', String(state.webSearchEnabled));
-        dom.webSearchToggle.setAttribute(
+    [dom.webSearchToggle, dom.codingWebSearchToggle].forEach((toggle) => {
+        if (!toggle) return;
+        toggle.classList.toggle('is-active', state.webSearchEnabled);
+        toggle.setAttribute('aria-pressed', String(state.webSearchEnabled));
+        toggle.setAttribute(
             'title',
             state.webSearchEnabled ? 'Web search is on — click to turn off' : 'Search the web with Google'
         );
-        dom.webSearchToggle.setAttribute(
+        toggle.setAttribute(
             'aria-label',
             state.webSearchEnabled ? 'Turn off web search' : 'Search the web with Google'
         );
-    }
+    });
 
-    dom.inputWrapper?.classList.toggle('is-web-search', state.webSearchEnabled);
+    [dom.inputWrapper, dom.codingInputWrapper].forEach((wrapper) => {
+        wrapper?.classList.toggle('is-web-search', state.webSearchEnabled);
+    });
 
     if (dom.inputBox) {
         dom.inputBox.placeholder = state.webSearchEnabled
             ? 'Search the web...'
             : 'Ask anything...';
+    }
+
+    if (dom.codingPrompt) {
+        dom.codingPrompt.placeholder = state.webSearchEnabled
+            ? 'Search the web about this code...'
+            : 'Describe the code change...';
     }
 }
 
@@ -178,6 +187,7 @@ export function bindComposerEvents() {
     [
         [dom.modelSelectBtn, dom.modelDropdown],
         [dom.workspaceModelSelectBtn, dom.workspaceModelDropdown],
+        [dom.codingModelSelectBtn, dom.codingModelDropdown],
     ].forEach(([button, dropdown]) => {
         if (button && dropdown) {
             button.addEventListener('click', (event) => {
@@ -193,6 +203,7 @@ export function bindComposerEvents() {
         [
             [dom.modelSelectBtn, dom.modelDropdown],
             [dom.workspaceModelSelectBtn, dom.workspaceModelDropdown],
+            [dom.codingModelSelectBtn, dom.codingModelDropdown],
         ].forEach(([button, dropdown]) => {
             if (dropdown && button && !dropdown.contains(event.target) && !button.contains(event.target)) {
                 dropdown.style.display = 'none';
@@ -203,6 +214,18 @@ export function bindComposerEvents() {
     if (dom.webSearchToggle) {
         dom.webSearchToggle.addEventListener('click', () => {
             setWebSearchMode(!state.webSearchEnabled);
+        });
+    }
+
+    if (dom.codingWebSearchToggle) {
+        dom.codingWebSearchToggle.addEventListener('click', () => {
+            setWebSearchMode(!state.webSearchEnabled);
+        });
+    }
+
+    if (dom.codingPasteActionBtn && dom.codingFileInput) {
+        dom.codingPasteActionBtn.addEventListener('click', () => {
+            dom.codingFileInput.click();
         });
     }
 

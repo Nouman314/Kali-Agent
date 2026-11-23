@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="popup/popup-agents.css">
     <link rel="stylesheet" href="popup/popup-workspace.css">
     <link rel="stylesheet" href="popup/popup-notes.css">
+    <link rel="stylesheet" href="popup/popup-coding.css">
     <link rel="stylesheet" href="github.min.css">
     <script src="marked.min.js"></script>
     <script src="highlight.min.js"></script>
@@ -126,6 +127,134 @@
                                         stroke-linejoin="round" aria-hidden="true" style="width: 18px !important; height: 18px !important;">
                                         <line x1="12" y1="19" x2="12" y2="5" />
                                         <polyline points="5 12 12 5 19 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="coding-view" id="codingView" hidden>
+                <div class="header">
+                    <div class="header-left">
+                        <span class="header-title">Coding</span>
+                    </div>
+                    <div class="header-actions">
+                        <button class="icon-btn" id="codingNewTaskBtn" type="button" aria-label="New coding task" data-tooltip="New coding task">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M9 7h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />
+                                <path d="M9 15h3l8.5 -8.5a1.5 1.5 0 0 0 -3 -3l-8.5 8.5v3" />
+                                <path d="M16 5l3 3" />
+                            </svg>
+                        </button>
+                        <button class="icon-btn" id="codingOpenWindowBtn" type="button" aria-label="Open in new window" data-tooltip="Open in new window">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+                                <path d="M11 13l9-9" />
+                                <path d="M15 4h5v5" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="coding-workspace">
+                    <section class="coding-source-card" aria-labelledby="codingSourceTitle">
+                        <div class="coding-section-header">
+                            <div>
+                                <h2 id="codingSourceTitle">Source</h2>
+                                <p>Paste code or capture text from the current page.</p>
+                            </div>
+                            <div class="coding-source-actions">
+                                <button class="coding-subtle-btn" id="codingPasteBtn" type="button">Paste</button>
+                                <button class="coding-subtle-btn" id="codingPageBtn" type="button">Use current page</button>
+                            </div>
+                        </div>
+                        <div class="coding-source-controls">
+                            <label for="codingLanguage">Language</label>
+                            <select id="codingLanguage" class="coding-language-select">
+                                <option value="Rust" selected>Rust</option>
+                                <option value="Python">Python</option>
+                                <option value="JavaScript">JavaScript</option>
+                                <option value="TypeScript">TypeScript</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <span class="coding-source-status" id="codingSourceStatus" aria-live="polite"></span>
+                        </div>
+                        <textarea id="codingSource" class="coding-source-input" placeholder="Paste code, an error message, or use the current page..." spellcheck="false"></textarea>
+                    </section>
+
+                    <div class="coding-result" id="codingResult" hidden>
+                        <div class="coding-result-heading">
+                            <h2>Review your result</h2>
+                            <button class="coding-subtle-btn" id="codingCopyBtn" type="button" disabled>Copy</button>
+                        </div>
+                        <div class="coding-result-columns">
+                            <section class="coding-code-panel">
+                                <h3>Before</h3>
+                                <pre id="codingBefore"></pre>
+                            </section>
+                            <section class="coding-code-panel">
+                                <h3>After</h3>
+                                <pre id="codingAfter" aria-live="polite"></pre>
+                            </section>
+                        </div>
+                        <div class="coding-error" id="codingError" role="alert" hidden></div>
+                    </div>
+
+                    <section class="coding-examples" aria-labelledby="codingExamplesTitle">
+                        <h2 id="codingExamplesTitle">Try an example</h2>
+                        <div class="coding-examples-list">
+                            <button class="coding-example" type="button">Explain this error</button>
+                            <button class="coding-example" type="button">Convert this Python to Rust</button>
+                            <button class="coding-example" type="button">Add comments to this code</button>
+                            <button class="coding-example" type="button">Write a function that reads a CSV file</button>
+                            <button class="coding-example" type="button">Make this function handle errors properly</button>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="input-area coding-input-area">
+                    <div class="input-box-wrapper coding-input-wrapper">
+                        <textarea id="codingPrompt" class="input-box coding-prompt" placeholder="Describe the code change..." aria-label="Describe the code change"></textarea>
+                        <div class="input-footer">
+                            <div class="input-footer-left">
+                                <div class="model-selector-wrapper" style="position: relative;">
+                                    <button class="model-selector" id="codingModelSelectBtn" type="button" aria-haspopup="true" aria-expanded="false">
+                                        <div class="model-dot"></div>
+                                        <span id="codingSelectedModelText">Gemini 3.1 Flash-Lite</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="font-size:13px; width:14px; height:14px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </button>
+                                    <div class="model-dropdown" id="codingModelDropdown" style="display:none; position:absolute; bottom:100%; left:0; margin-bottom:8px; background:#fff; border:1px solid rgba(0,0,0,0.08); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); padding:6px; z-index:100; min-width:190px; font-family:var(--font-sans);">
+                                        <div class="model-option" data-model="gemini-4-argon"><div class="model-dot" style="background:#4b3fd8;"></div>Gemini 4 Argon</div>
+                                        <div class="model-option" data-model="gemini-3.8-flash"><div class="model-dot" style="background:#8b5cf6;"></div>Gemini 3.8 Flash</div>
+                                        <div class="model-option" data-model="gemini-3.6-flash"><div class="model-dot" style="background:#10b981;"></div>Gemini 3.6 Flash</div>
+                                        <div class="model-option" data-model="gemini-3.1-flash-lite"><div class="model-dot" style="background:#f59e0b;"></div>Gemini 3.1 Flash-Lite</div>
+                                    </div>
+                                </div>
+                                <button class="web-search-toggle" id="codingWebSearchToggle" type="button" aria-pressed="false" aria-label="Search the web with Google" title="Search the web with Google">
+                                    <span class="web-search-toggle-icon" aria-hidden="true">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="9"></circle>
+                                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                                            <path d="M12 3a14.5 14.5 0 0 1 0 18a14.5 14.5 0 0 1 0-18z"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="web-search-toggle-label">Web</span>
+                                </button>
+                            </div>
+                            <div class="input-right">
+                                <input id="codingFileInput" type="file" accept=".rs,.py,.js,.jsx,.ts,.tsx,.java,.c,.h,.cpp,.hpp,.go,.rb,.php,.swift,.kt,.txt,.md" hidden>
+                                <button class="plus-btn" id="codingPasteActionBtn" type="button" aria-label="Add code file" title="Add code file">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:18px;height:18px;">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </button>
+                                <button class="send-btn" id="codingSendBtn" type="button" aria-label="Generate code">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:18px;height:18px;">
+                                        <line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline>
                                     </svg>
                                 </button>
                             </div>
@@ -542,16 +671,14 @@
                 <span class="nav-label">Workspace</span>
             </div>
 
-            <!-- 5. Templates -->
-            <div class="nav-item" role="button" tabindex="0" data-nav-item="templates">
+            <!-- 5. Coding -->
+            <div class="nav-item" role="button" tabindex="0" data-nav-item="coding">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="4" y="4" width="16" height="4" rx="1" />
-                    <rect x="4" y="12" width="6" height="8" rx="1" />
-                    <line x1="14" y1="12" x2="20" y2="12" />
-                    <line x1="14" y1="16" x2="20" y2="16" />
-                    <line x1="14" y1="20" x2="20" y2="20" />
+                    <path d="m8 7-5 5 5 5"></path>
+                    <path d="m16 7 5 5-5 5"></path>
+                    <path d="m14 4-4 16"></path>
                 </svg>
-                <span class="nav-label">Templates</span>
+                <span class="nav-label">Coding</span>
             </div>
 
             <!-- 6. Activity -->

@@ -7,6 +7,7 @@ import { bindNavigation } from './features/navigation.js';
 import { bindAgentsInteractions } from './features/agents.js';
 import { bindWorkspaceInteractions } from './features/workspace.js';
 import { bindNotesInteractions } from './features/notes.js';
+import { bindCodingInteractions } from './features/coding.js';
 
 configureMarkdownRenderer();
 bindAttachmentTrayInteractions();
@@ -17,5 +18,6 @@ bindNavigation();
 bindAgentsInteractions();
 bindWorkspaceInteractions();
 bindNotesInteractions();
+bindCodingInteractions();
 resetComposerHeight();
 restoreConversation();
