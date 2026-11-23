@@ -16,8 +16,12 @@ export async function sendChatRequest({
     signal,
     systemInstruction,
     webSearch = false,
+    onProgress,
 }) {
     const hasAttachments = attachments.length > 0;
+    const headers = webSearch
+        ? { Accept: 'application/x-ndjson' }
+        : undefined;
     let response;
 
     if (hasAttachments) {
@@ -35,13 +39,17 @@ export async function sendChatRequest({
 
         response = await fetch(CONFIG.ENDPOINTS.CHAT, {
             method: 'POST',
+            headers,
             body: formData,
             signal,
         });
     } else {
         response = await fetch(CONFIG.ENDPOINTS.CHAT, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                ...(headers || {}),
+            },
             body: JSON.stringify({
                 message,
                 model,
@@ -53,12 +61,73 @@ export async function sendChatRequest({
         });
     }
 
+    if (response.headers.get('content-type')?.includes('application/x-ndjson')) {
+        return readProgressResponse(response, onProgress);
+    }
+
     const data = await readJsonResponse(response);
     return {
         response,
         data,
         ok: response.ok && !data.error,
     };
+}
+
+async function readProgressResponse(response, onProgress) {
+    if (!response.ok) {
+        const data = await readJsonResponse(response);
+        return { response, data, ok: false };
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+        return {
+            response,
+            data: { error: 'The web search progress stream is unavailable.' },
+            ok: false,
+        };
+    }
+
+    const decoder = new TextDecoder();
+    let pending = '';
+    let result = null;
+    let streamError = null;
+
+    const handleLine = (line) => {
+        if (!line.trim()) return;
+
+        const event = JSON.parse(line);
+        if (event.type === 'result') {
+            result = event.data;
+        } else if (event.type === 'error') {
+            streamError = { error: event.error, code: event.code };
+        } else if (onProgress) {
+            onProgress(event);
+        }
+    };
+
+    while (true) {
+        const { done, value } = await reader.read();
+        pending += decoder.decode(value || new Uint8Array(), { stream: !done });
+        const lines = pending.split('\n');
+        pending = lines.pop();
+        lines.forEach(handleLine);
+        if (done) break;
+    }
+    if (pending.trim()) handleLine(pending);
+
+    if (streamError) {
+        return { response, data: streamError, ok: false };
+    }
+    if (!result || typeof result.reply !== 'string') {
+        return {
+            response,
+            data: { error: 'The web search stream ended before the answer was ready.' },
+            ok: false,
+        };
+    }
+
+    return { response, data: result, ok: true };
 }
 
 export async function sendSummaryRequest({ text, model, signal }) {

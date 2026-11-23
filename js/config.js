@@ -46,14 +46,6 @@ export const CONFIG = {
         CHUNK_SIZE: 5,
         SPEED_MS: 1,
     },
-    SEARCH_PHRASES: [
-        'Searching the web...',
-        'Thinking...',
-        'Processing...',
-        'Analyzing...',
-        'Generating...',
-        'Almost there...',
-    ],
     THINKING_PHRASES: [
         'Thinking...',
         'Processing...',

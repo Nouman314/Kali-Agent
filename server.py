@@ -10,6 +10,7 @@ Setup:
 POST /chat            { "message": "...", "model": "...", "web_search": false }
                       →  { "reply": "...", "sources": [...], "images": [...] }
                       Accepts prior conversation turns in the optional "history" array.
+                      With Accept: application/x-ndjson, streams search progress and source URLs.
 POST /summarize       { "text": "...", "model": "..." }     →  { "reply": "..." }
 POST /grammar-fix     { "text": "..." }                      →  { "corrected": "..." }
 POST /workspace-chat  multipart: message, model, attachments →  { "reply": "..." }
@@ -23,7 +24,7 @@ import json
 import mimetypes
 import os
 from urllib.parse import urlparse
-from flask       import Flask, request, jsonify
+from flask       import Flask, Response, request, jsonify, stream_with_context
 from flask_cors  import CORS
 from dotenv      import load_dotenv
 from google      import genai
@@ -64,7 +65,7 @@ class WebSearchError(Exception):
         self.code = code
 
 
-DEFAULT_MODEL = "gemini-3.8-flash"
+DEFAULT_MODEL = "gemini-3.1-flash-lite"
 SUMMARY_SYSTEM_INSTRUCTION = (
     "Summarize the user's note in a few concise bullet points. Keep the note's "
     "language and preserve its key facts, decisions, and action items. Return "
@@ -374,6 +375,127 @@ def _format_search_results(query, results):
     return "\n\n".join(lines)
 
 
+def _ndjson_event(event_type, **payload):
+    return json.dumps({"type": event_type, **payload}, ensure_ascii=False) + "\n"
+
+
+def _generate_chat_reply(
+    user_message,
+    selected_model,
+    system_instruction,
+    upload_files,
+    chat_history,
+    use_web_search,
+    search_results,
+    image_results,
+    image_search_error,
+):
+    contents = [
+        genai.types.Content(role=entry["role"], parts=[genai.types.Part(text=entry["text"])])
+        for entry in chat_history
+    ]
+
+    attachment_parts, history_message, attachment_error = _build_attachment_context(upload_files, user_message)
+    if attachment_error:
+        return {"error": attachment_error}, 400
+
+    if use_web_search:
+        attachment_parts.insert(
+            0,
+            genai.types.Part(
+                text=_format_search_results(user_message, search_results)
+                + "\n\nAnswer the question below using these search results.\n"
+            ),
+        )
+
+    contents.append(genai.types.Content(
+        role="user",
+        parts=attachment_parts
+    ))
+
+    response = client.models.generate_content(
+        model=selected_model,
+        contents=contents,
+        config=genai.types.GenerateContentConfig(
+            system_instruction=system_instruction,
+        ),
+    )
+
+    return {
+        "reply": response.text or "",
+        "sources": search_results,
+        "images": image_results,
+        "image_search_error": image_search_error,
+        "history_message": history_message,
+    }, 200
+
+
+def _chat_error_payload(error):
+    print(f"[ERROR] Gemini API call failed: {error}")
+    error_message = str(error)
+    if "image" in error_message.lower() and "does not support" in error_message.lower():
+        return {
+            "error": "The selected model does not support image input. Please switch to a vision-capable model or remove the image attachment."
+        }, 400
+    return {"error": f"AI error: {error_message}"}, 500
+
+
+def _stream_web_search_reply(
+    user_message,
+    selected_model,
+    system_instruction,
+    upload_files,
+    chat_history,
+):
+    yield _ndjson_event("status", text="Searching the web...")
+    try:
+        search_results = _web_search(user_message)
+    except WebSearchError as exc:
+        yield _ndjson_event("error", error=str(exc), code=exc.code)
+        return
+
+    for source in search_results:
+        yield _ndjson_event("source", source={
+            "title": source["title"],
+            "link": source["link"],
+        })
+
+    if search_results:
+        image_status = f"Found {len(search_results)} sources. Searching for related images..."
+    else:
+        image_status = "No sources found. Searching for related images..."
+    yield _ndjson_event("status", text=image_status)
+
+    image_results = []
+    image_search_error = None
+    try:
+        image_results = _web_image_search(user_message)
+    except WebSearchError as exc:
+        image_search_error = str(exc)
+        print(f"[WARN] {image_search_error}")
+
+    yield _ndjson_event("status", text="Reviewing the search results and preparing an answer...")
+    try:
+        payload, status = _generate_chat_reply(
+            user_message=user_message,
+            selected_model=selected_model,
+            system_instruction=f"{system_instruction}\n\n{WEB_SEARCH_SYSTEM_INSTRUCTION}",
+            upload_files=upload_files,
+            chat_history=chat_history,
+            use_web_search=True,
+            search_results=search_results,
+            image_results=image_results,
+            image_search_error=image_search_error,
+        )
+        if status != 200:
+            yield _ndjson_event("error", error=payload["error"])
+            return
+        yield _ndjson_event("result", data=payload)
+    except Exception as exc:
+        payload, _ = _chat_error_payload(exc)
+        yield _ndjson_event("error", error=payload["error"])
+
+
 # ── Flask App ────────────────────────────────────────────────────
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -415,6 +537,19 @@ def chat():
     if not user_message and not upload_files:
         return jsonify({"error": "Message cannot be empty."}), 400
 
+    if use_web_search and "application/x-ndjson" in request.headers.get("Accept", ""):
+        return Response(
+            stream_with_context(_stream_web_search_reply(
+                user_message=user_message,
+                selected_model=selected_model,
+                system_instruction=system_instruction,
+                upload_files=upload_files,
+                chat_history=chat_history,
+            )),
+            mimetype="application/x-ndjson",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
     search_results = []
     image_results = []
     image_search_error = None
@@ -433,52 +568,21 @@ def chat():
         system_instruction = f"{system_instruction}\n\n{WEB_SEARCH_SYSTEM_INSTRUCTION}"
 
     try:
-        contents = [
-            genai.types.Content(role=entry["role"], parts=[genai.types.Part(text=entry["text"])])
-            for entry in chat_history
-        ]
-
-        attachment_parts, history_message, attachment_error = _build_attachment_context(upload_files, user_message)
-        if attachment_error:
-            return jsonify({"error": attachment_error}), 400
-
-        if use_web_search:
-            attachment_parts.insert(
-                0,
-                genai.types.Part(
-                    text=_format_search_results(user_message, search_results)
-                    + "\n\nAnswer the question below using these search results.\n"
-                ),
-            )
-
-        contents.append(genai.types.Content(
-            role="user",
-            parts=attachment_parts
-        ))
-
-        response = client.models.generate_content(
-            model=selected_model,
-            contents=contents,
-            config=genai.types.GenerateContentConfig(
-                system_instruction=system_instruction,
-            ),
+        payload, status = _generate_chat_reply(
+            user_message=user_message,
+            selected_model=selected_model,
+            system_instruction=system_instruction,
+            upload_files=upload_files,
+            chat_history=chat_history,
+            use_web_search=use_web_search,
+            search_results=search_results,
+            image_results=image_results,
+            image_search_error=image_search_error,
         )
-
-        reply = response.text or ""
-        return jsonify({
-            "reply": reply,
-            "sources": search_results,
-            "images": image_results,
-            "image_search_error": image_search_error,
-            "history_message": history_message,
-        })
-
-    except Exception as e:
-        print(f"[ERROR] Gemini API call failed: {e}")
-        error_message = str(e)
-        if "image" in error_message.lower() and "does not support" in error_message.lower():
-            return jsonify({"error": "The selected model does not support image input. Please switch to a vision-capable model or remove the image attachment."}), 400
-        return jsonify({"error": f"AI error: {error_message}"}), 500
+        return jsonify(payload), status
+    except Exception as exc:
+        payload, status = _chat_error_payload(exc)
+        return jsonify(payload), status
 
 
 @app.route("/summarize", methods=["POST"])

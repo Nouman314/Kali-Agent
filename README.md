@@ -121,8 +121,8 @@ Usage
 * Enter a message and submit it.
 * Open Notes to create and organize notes. Notes are saved in the browser's local extension storage.
 * Use the plus button to attach up to 5 files per message.
-* Choose a model: Gemini 4 Argon, Gemini 3.8 Flash (default), Gemini 3.6 Flash, or Gemini 3.1 Flash-Lite.
-* Toggle the Web button next to the model selector to search DuckDuckGo and get answers with clickable source links.
+* Choose a model: Gemini 4 Argon, Gemini 3.8 Flash, Gemini 3.6 Flash, or Gemini 3.1 Flash-Lite (default).
+* Toggle the Web button next to the model selector to search DuckDuckGo, follow live search progress and source links, and get answers with clickable citations.
 * Use message actions to retry, edit, copy, or provide feedback.
 
 ---
@@ -137,11 +137,13 @@ Request:
 
 {
   "message": "Hello",
-  "model": "gemini-3.8-flash",
+  "model": "gemini-3.1-flash-lite",
   "web_search": false
 }
 
 Set `web_search` to `true` to search DuckDuckGo before answering. The response then includes the cited sources:
+
+For live search progress, send `Accept: application/x-ndjson` with a web-search request. The response streams newline-delimited `status` and `source` events, followed by a `result` event containing the usual response payload. Requests without this header continue to return JSON.
 
 {
   "reply": "Hello! How can I assist you?",
@@ -191,7 +193,7 @@ Example response:
 
 {
   "status": "ok",
-  "model": "gemini-3.8-flash"
+  "model": "gemini-3.1-flash-lite"
 }
 
 ---

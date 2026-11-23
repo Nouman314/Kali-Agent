@@ -555,11 +555,9 @@ const GLOBE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
 </svg>`;
 
 function startThinkingAnimation(bubble, useWebSearch) {
-    let phraseIndex = 0;
     bubble.innerHTML = '';
 
     if (useWebSearch) {
-        const phrases = CONFIG.SEARCH_PHRASES;
         const indicator = document.createElement('div');
         indicator.className = 'search-thinking';
         indicator.setAttribute('role', 'status');
@@ -569,6 +567,11 @@ function startThinkingAnimation(bubble, useWebSearch) {
         bubble.appendChild(indicator);
 
         const slot = indicator.querySelector('.search-phrase-slot');
+        const sourceList = document.createElement('div');
+        sourceList.className = 'search-progress-sources';
+        sourceList.setAttribute('aria-label', 'Live web search sources');
+        bubble.appendChild(sourceList);
+
         const renderPhrase = (text) => {
             slot.innerHTML = '';
             const wrapper = document.createElement('span');
@@ -580,13 +583,35 @@ function startThinkingAnimation(bubble, useWebSearch) {
             slot.appendChild(wrapper);
         };
 
-        renderPhrase(phrases[0]);
-        const timer = setInterval(() => {
-            phraseIndex = (phraseIndex + 1) % phrases.length;
-            renderPhrase(phrases[phraseIndex]);
-        }, 2000);
+        renderPhrase('Searching the web...');
 
-        return () => clearInterval(timer);
+        return {
+            update(progress) {
+                if (progress.type === 'status' && typeof progress.text === 'string') {
+                    renderPhrase(progress.text);
+                    return;
+                }
+
+                if (progress.type !== 'source' || !progress.source) return;
+                const url = getAllowedPageUrl(progress.source.link);
+                if (!url) return;
+                const hasSource = Array.from(sourceList.children).some((source) => source.href === url);
+                if (hasSource) return;
+
+                const source = document.createElement('a');
+                source.className = 'search-progress-source';
+                source.href = url;
+                source.target = '_blank';
+                source.rel = 'noopener noreferrer';
+                source.title = progress.source.title || url;
+                source.textContent = getSourceDomain(url);
+                sourceList.appendChild(source);
+            },
+            stop() {
+                indicator.remove();
+                sourceList.remove();
+            },
+        };
     }
 
     const indicator = document.createElement('div');
@@ -597,7 +622,12 @@ function startThinkingAnimation(bubble, useWebSearch) {
     indicator.innerHTML = '<span class="chat-thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
     bubble.appendChild(indicator);
 
-    return () => indicator.remove();
+    return {
+        update() {},
+        stop() {
+            indicator.remove();
+        },
+    };
 }
 
 function getSourceDomain(url) {
@@ -847,7 +877,7 @@ export async function processAiResponse({ text, attachments = [] }) {
         aiBubble.classList.add('chat-bubble--search');
     }
 
-    let stopThinking = startThinkingAnimation(aiBubble, useWebSearch);
+    const thinkingAnimation = startThinkingAnimation(aiBubble, useWebSearch);
 
     try {
         const history = trimConversation(state.messages).map((message) => ({
@@ -863,9 +893,10 @@ export async function processAiResponse({ text, attachments = [] }) {
             signal: state.abortController.signal,
             systemInstruction: state.activeAgent?.systemInstruction || undefined,
             webSearch: useWebSearch,
+            onProgress: useWebSearch ? (progress) => thinkingAnimation.update(progress) : undefined,
         });
 
-        stopThinking();
+        thinkingAnimation.stop();
         aiBubble.innerHTML = '';
 
         if (!ok) {
@@ -908,7 +939,7 @@ export async function processAiResponse({ text, attachments = [] }) {
 
         return response.ok;
     } catch (err) {
-        stopThinking();
+        thinkingAnimation.stop();
         aiBubble.innerHTML = '';
 
         if (err.name === 'AbortError') {
