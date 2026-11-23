@@ -747,7 +747,7 @@ async function requestWorkspaceResponse(text) {
         btn.classList.add('disabled');
     });
 
-    aiBubble.innerHTML = '<span class="shimmer-text">Thinking...</span>';
+    aiBubble.innerHTML = '<div class="chat-thinking" role="status" aria-live="polite" aria-label="Thinking"><span class="chat-thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>';
 
     try {
         const { data, ok } = await sendWorkspaceChatRequest({
