@@ -398,9 +398,3 @@
     text-align: center;
     padding: 0 24px;
 }
-
-/* The input footer used to also hold a "Frontend preview" hint label.
-   Now it only has the send button, so pin it to the right. */
-.workspace-input-area .input-footer {
-    justify-content: flex-end;
-}

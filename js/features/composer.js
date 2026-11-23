@@ -9,19 +9,23 @@ let composerBound = false;
 
 function setActiveModel(option) {
     state.currentModel = option.getAttribute('data-model');
-    if (dom.selectedModelText) {
-        dom.selectedModelText.textContent = option.textContent.trim();
-    }
+    const model = CONFIG.MODELS.OPTIONS.find((item) => item.value === state.currentModel);
+    const selectedModelText = model?.label || option.textContent.trim();
+    const selectedOption = dom.modelOptions.find((item) => item.getAttribute('data-model') === state.currentModel);
+    const optionDot = selectedOption?.querySelector('.model-dot');
 
-    if (dom.modelDropdown) {
-        dom.modelDropdown.style.display = 'none';
-    }
+    [dom.selectedModelText, dom.workspaceSelectedModelText].forEach((label) => {
+        if (label) label.textContent = selectedModelText;
+    });
 
-    const mainDot = dom.modelSelectBtn?.querySelector('.model-dot');
-    const optionDot = option.querySelector('.model-dot');
-    if (mainDot && optionDot) {
-        mainDot.style.background = optionDot.style.background;
-    }
+    [dom.modelSelectBtn, dom.workspaceModelSelectBtn].forEach((button) => {
+        const dot = button?.querySelector('.model-dot');
+        if (dot && optionDot) dot.style.background = optionDot.style.background;
+    });
+
+    [dom.modelDropdown, dom.workspaceModelDropdown].forEach((dropdown) => {
+        if (dropdown) dropdown.style.display = 'none';
+    });
 }
 
 export function setWebSearchMode(enabled) {
@@ -171,29 +175,36 @@ export function bindComposerEvents() {
         });
     }
 
-    if (dom.modelSelectBtn && dom.modelDropdown) {
-        dom.modelSelectBtn.addEventListener('click', (event) => {
-            event.stopPropagation();
-            dom.modelDropdown.style.display = dom.modelDropdown.style.display === 'block' ? 'none' : 'block';
-        });
-    }
+    [
+        [dom.modelSelectBtn, dom.modelDropdown],
+        [dom.workspaceModelSelectBtn, dom.workspaceModelDropdown],
+    ].forEach(([button, dropdown]) => {
+        if (button && dropdown) {
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            });
 
-    if (dom.modelDropdown) {
-        dom.modelDropdown.addEventListener('click', handleModelDropdownClick);
-    }
+            dropdown.addEventListener('click', handleModelDropdownClick);
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        [
+            [dom.modelSelectBtn, dom.modelDropdown],
+            [dom.workspaceModelSelectBtn, dom.workspaceModelDropdown],
+        ].forEach(([button, dropdown]) => {
+            if (dropdown && button && !dropdown.contains(event.target) && !button.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    });
 
     if (dom.webSearchToggle) {
         dom.webSearchToggle.addEventListener('click', () => {
             setWebSearchMode(!state.webSearchEnabled);
         });
     }
-
-    document.addEventListener('click', (event) => {
-        if (!dom.modelDropdown || !dom.modelSelectBtn) return;
-        if (!dom.modelDropdown.contains(event.target) && !dom.modelSelectBtn.contains(event.target)) {
-            dom.modelDropdown.style.display = 'none';
-        }
-    });
 
     if (dom.inputWrapper && dom.inputBox) {
         dom.inputWrapper.addEventListener('mousemove', updateResizeCursor);

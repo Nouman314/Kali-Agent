@@ -8,7 +8,7 @@ export const CONFIG = {
         WORKSPACE_RESET: 'http://localhost:5000/workspace-reset',
     },
     MODELS: {
-        DEFAULT: 'gemini-3.8-flash',
+        DEFAULT: 'gemini-3.1-flash-lite',
         OPTIONS: [
             {
                 value: 'gemini-4-argon',
