@@ -730,9 +730,31 @@ function exportNote(format) {
         const content = `# ${note.title || 'Untitled note'}\n\n${formatMarkdown(elements.editor).trim()}\n`;
         downloadFile(`${filename}.md`, content, 'text/markdown;charset=utf-8');
     } else if (format === 'pdf') {
-        document.body.classList.add('notes-printing');
-        window.print();
-        document.body.classList.remove('notes-printing');
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            elements.saveStatus.textContent = 'Allow pop-ups to export as PDF';
+            return;
+        }
+
+        const title = note.title.trim() || 'Untitled note';
+        const content = sanitizeContent(elements.editor.innerHTML);
+        printWindow.document.open();
+        printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${xmlEscape(title)}</title><style>
+            @page { margin: 20mm; }
+            body { color: #111; font: 12pt/1.55 Arial, sans-serif; }
+            h1 { font-size: 24pt; margin: 0 0 1em; }
+            h2, h3 { margin: 1.2em 0 .5em; }
+            p { margin: .5em 0; }
+            a { color: inherit; }
+            .notes-checklist-item { display: flex; gap: .5em; }
+            input[type="checkbox"] { margin-top: .35em; }
+            @media screen { body { max-width: 800px; margin: 40px auto; padding: 0 24px; } }
+        </style></head><body><h1>${xmlEscape(title)}</h1>${content}</body></html>`);
+        printWindow.document.close();
+        printWindow.addEventListener('load', () => {
+            printWindow.focus();
+            printWindow.print();
+        }, { once: true });
     } else if (format === 'docx') {
         const docx = createDocx(note, elements.editor);
         downloadFile(`${filename}.docx`, docx, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
