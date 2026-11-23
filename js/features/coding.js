@@ -1,4 +1,3 @@
-import { CONFIG } from '../config.js';
 import { dom } from '../dom.js';
 import { sendChatRequest } from '../services/chatApi.js';
 import { state } from '../state.js';
@@ -93,8 +92,23 @@ async function readCurrentPage() {
 
     try {
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-        if (!tab?.id) {
-            throw new Error('No active browser tab was found.');
+        if (!tab?.id || !tab.url) {
+            throw new Error('Could not identify the active page. Reopen the side panel from that tab and try again.');
+        }
+
+        const pageUrl = new URL(tab.url);
+        if (!['http:', 'https:'].includes(pageUrl.protocol)) {
+            throw new Error('This browser page does not allow extension access.');
+        }
+
+        const originPattern = `${pageUrl.origin}/*`;
+        const hasHostPermission = await chrome.permissions.contains({ origins: [originPattern] });
+        if (!hasHostPermission) {
+            setSourceStatus(`Requesting access to ${pageUrl.host}…`);
+            const granted = await chrome.permissions.request({ origins: [originPattern] });
+            if (!granted) {
+                throw new Error(`Permission to read ${pageUrl.host} was not granted.`);
+            }
         }
 
         const [capture] = await chrome.scripting.executeScript({
@@ -113,7 +127,9 @@ async function readCurrentPage() {
         const prefix = `${page.title || 'Current page'}\n${page.url || ''}\n\n`;
         const availableLength = Math.max(0, MAX_SOURCE_CHARS - prefix.length);
         dom.codingSource.value = `${prefix}${page.text.slice(0, availableLength)}`;
-        setSourceStatus(page.text.length > availableLength ? 'Page text loaded (shortened to 20,000 characters).' : 'Current page loaded.');
+        setSourceStatus(page.text.length > availableLength
+            ? 'Page text loaded (shortened to 20,000 characters).'
+            : `Current page loaded from ${pageUrl.host}.`);
         dom.codingSource.focus();
     } catch (error) {
         setSourceStatus(`Could not read this page: ${error.message || 'Page access was denied.'}`);

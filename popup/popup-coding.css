@@ -16,19 +16,34 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    padding: 18px 20px;
+    padding: 24px 20px;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
-.coding-source-card,
-.coding-result {
+.coding-source-card {
     border: 0.5px solid rgba(0, 0, 0, 0.12);
+    border-radius: 16px;
+    background: #f9fafb;
+    overflow: hidden;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.coding-result {
+    display: flex;
+    flex-direction: column;
+    border: 0.5px solid rgba(0, 0, 0, 0.1);
     border-radius: 14px;
     background: #ffffff;
     overflow: hidden;
     flex-shrink: 0;
+}
+
+.coding-source-card:focus-within {
+    border-color: rgba(0, 0, 0, 0.3);
+    background: #ffffff;
 }
 
 .coding-section-header,
@@ -40,19 +55,18 @@
     padding: 12px 14px;
 }
 
-.coding-section-header h2,
-.coding-result-heading h2,
-.coding-examples h2 {
+.coding-section-header h2 {
     color: #111111;
-    font-size: 14px;
+    font-size: 18px;
     font-weight: 600;
+    margin-bottom: 6px;
 }
 
 .coding-section-header p {
-    margin-top: 4px;
     color: #6b7280;
-    font-size: 12px;
-    line-height: 1.4;
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 420px;
 }
 
 .coding-source-actions {
@@ -63,11 +77,11 @@
 
 .coding-subtle-btn {
     border: 0.5px solid rgba(0, 0, 0, 0.12);
-    border-radius: 8px;
+    border-radius: 25px;
     background: #ffffff;
     color: #6b7280;
     font: 500 12px var(--font-sans);
-    padding: 6px 9px;
+    padding: 6px 12px;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
 }
@@ -136,6 +150,12 @@
     border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
 }
 
+.coding-result-heading h2 {
+    color: #111111;
+    font-size: 14px;
+    font-weight: 600;
+}
+
 .coding-result-columns {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -195,7 +215,8 @@
 
 .coding-examples h2 {
     color: #6b7280;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .coding-examples-list {
@@ -223,20 +244,12 @@
 }
 
 .coding-input-area {
-    padding-top: 10px;
+    padding: 12px 16px 16px;
 }
 
 .coding-prompt {
-    min-height: 72px;
-    max-height: 160px;
-}
-
-.coding-input-wrapper .input-footer {
-    padding: 6px 8px 8px;
-}
-
-.coding-input-wrapper .model-selector {
-    max-width: 170px;
+    min-height: 100px;
+    max-height: 200px;
 }
 
 .coding-input-wrapper .model-option {
@@ -255,7 +268,7 @@
     background: #f3f4f6;
 }
 
-@media (max-width: 420px) {
+@media (max-width: 560px) {
     .coding-workspace {
         padding: 14px 12px;
     }

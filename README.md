@@ -121,7 +121,7 @@ http://localhost:5000
 Usage
 
 * Open the extension side panel.
-* Open Coding to paste code, load a code file, or explicitly capture the current page; review the generated result before copying it. Coding never applies changes to a page or file.
+* Open Coding to paste code, load a code file, or explicitly capture the current page. The first capture from a site asks for access to that site. Review the generated result before copying it; Coding never applies changes to a page or file.
 * Enter a message and submit it.
 * Open Notes to create and organize notes. Notes are saved in the browser's local extension storage.
 * Use the plus button to attach up to 5 files per message.
