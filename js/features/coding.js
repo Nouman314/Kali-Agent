@@ -14,17 +14,49 @@ const CODING_SYSTEM_INSTRUCTION = [
 
 let codingBound = false;
 let codingRequestController = null;
+let codingSourceName = '';
+let codingHistory = [];
 
 function revealCodingContext() {
     if (dom.codingWelcome) dom.codingWelcome.hidden = true;
 }
 
-function appendCodingMessage(text, role) {
+function appendCodingMessage(text, role, attachmentName = '') {
     if (!dom.codingMessages) return null;
     if (dom.codingWelcome) dom.codingWelcome.hidden = true;
 
     const wrapper = document.createElement('div');
     wrapper.className = `message-wrapper message-wrapper--${role}`;
+
+    if (role === 'ai') {
+        const header = document.createElement('div');
+        header.className = 'ai-agent-header';
+
+        const activeAgent = state.activeAgent;
+        const name = document.createElement('span');
+        name.textContent = activeAgent?.name || 'Kali Agent';
+
+        if (activeAgent) {
+            const icon = document.createElement('div');
+            icon.className = `ai-agent-icon-wrapper ${activeAgent.icon || 'terminal'}`;
+            const paths = {
+                terminal: '<polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line>',
+                shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>',
+                radar: '<circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle>',
+                search: '<circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>',
+                code: '<polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>',
+            };
+            icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[activeAgent.icon] || paths.terminal}</svg>`;
+            header.append(icon, name);
+        } else {
+            const icon = document.createElement('img');
+            icon.src = chrome.runtime.getURL('icons/icon400.png');
+            icon.className = 'ai-agent-icon';
+            icon.alt = '';
+            header.append(icon, name);
+        }
+        wrapper.appendChild(header);
+    }
 
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble chat-bubble--${role}`;
@@ -49,6 +81,12 @@ function appendCodingMessage(text, role) {
         });
     } else {
         bubble.textContent = text;
+        if (attachmentName) {
+            const attachment = document.createElement('div');
+            attachment.className = 'coding-file-reference';
+            attachment.textContent = attachmentName;
+            bubble.appendChild(attachment);
+        }
     }
 
     wrapper.appendChild(bubble);
@@ -63,12 +101,10 @@ function setSourceStatus(message) {
     }
 }
 
-function showCodingError(message) {
+function showCodingError(message, bubble = null) {
     if (!message) return;
-    const thinking = dom.codingMessages?.querySelector('.coding-thinking');
-    if (thinking) {
-        thinking.classList.remove('coding-thinking');
-        thinking.textContent = message;
+    if (bubble) {
+        bubble.textContent = message;
         return;
     }
     appendCodingMessage(message, 'ai');
@@ -91,7 +127,8 @@ function clearCodingTask() {
         dom.codingMessages.querySelectorAll('.message-wrapper').forEach((message) => message.remove());
     }
     if (dom.codingContextChip) dom.codingContextChip.hidden = true;
-    showCodingError('');
+    codingSourceName = '';
+    codingHistory = [];
     setSourceStatus('');
     setCodingLoading(false);
     dom.codingPrompt?.focus();
@@ -99,7 +136,6 @@ function clearCodingTask() {
 
 async function pasteSource() {
     if (!dom.codingSource) return;
-    revealCodingContext();
 
     try {
         const text = await navigator.clipboard.readText();
@@ -108,6 +144,8 @@ async function pasteSource() {
             return;
         }
         dom.codingSource.value = text.slice(0, MAX_SOURCE_CHARS);
+        codingSourceName = '';
+        if (dom.codingContextChip) dom.codingContextChip.hidden = true;
         setSourceStatus(text.length > MAX_SOURCE_CHARS ? 'Pasted (source shortened to 20,000 characters).' : 'Pasted.');
         dom.codingSource.focus();
     } catch (error) {
@@ -117,7 +155,6 @@ async function pasteSource() {
 
 async function readCurrentPage() {
     if (!dom.codingPageBtn || !dom.codingSource) return;
-    revealCodingContext();
     if (!globalThis.chrome?.tabs || !globalThis.chrome?.scripting) {
         setSourceStatus('Current-page capture is available in the extension side panel.');
         return;
@@ -163,6 +200,8 @@ async function readCurrentPage() {
         const prefix = `${page.title || 'Current page'}\n${page.url || ''}\n\n`;
         const availableLength = Math.max(0, MAX_SOURCE_CHARS - prefix.length);
         dom.codingSource.value = `${prefix}${page.text.slice(0, availableLength)}`;
+        codingSourceName = '';
+        if (dom.codingContextChip) dom.codingContextChip.hidden = true;
         setSourceStatus(page.text.length > availableLength
             ? 'Page text loaded (shortened to 20,000 characters).'
             : `Current page loaded from ${pageUrl.host}.`);
@@ -178,15 +217,17 @@ async function readCodeFile(event) {
     const [file] = event.target.files || [];
     event.target.value = '';
     if (!file || !dom.codingSource) return;
-    revealCodingContext();
-
     try {
         const text = await file.slice(0, MAX_SOURCE_CHARS * 4).text();
         dom.codingSource.value = text.slice(0, MAX_SOURCE_CHARS);
+        const extension = file.name.split('.').pop().toLowerCase();
+        const languageByExtension = { py: 'Python', js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript', cjs: 'JavaScript', ts: 'TypeScript', tsx: 'TypeScript' };
+        dom.codingLanguage.value = languageByExtension[extension] || 'Other';
         if (dom.codingContextChip) {
             dom.codingContextChip.textContent = file.name;
             dom.codingContextChip.hidden = false;
         }
+        codingSourceName = file.name;
         setSourceStatus(text.length > MAX_SOURCE_CHARS || file.size > MAX_SOURCE_CHARS * 4
             ? `${file.name} loaded (shortened to 20,000 characters).`
             : `${file.name} loaded.`);
@@ -197,7 +238,9 @@ async function readCodeFile(event) {
 }
 
 async function generateCode() {
-    const prompt = dom.codingPrompt?.value.trim();
+    const source = dom.codingSource?.value || '';
+    const sourceName = codingSourceName;
+    const prompt = dom.codingPrompt?.value.trim() || (source ? 'Please analyze the uploaded code and explain what it does.' : '');
     if (!prompt) {
         setSourceStatus('Describe what you want the coding assistant to do.');
         dom.codingPrompt?.focus();
@@ -206,7 +249,6 @@ async function generateCode() {
 
     if (codingRequestController) return;
 
-    const source = dom.codingSource?.value || '';
     const language = dom.codingLanguage?.value || 'Rust';
     const message = [
         `Language: ${language}`,
@@ -216,8 +258,9 @@ async function generateCode() {
 
     const requestController = new AbortController();
     codingRequestController = requestController;
-    showCodingError('');
-    appendCodingMessage(prompt, 'user');
+    revealCodingContext();
+    if (dom.codingContextChip) dom.codingContextChip.hidden = true;
+    appendCodingMessage(prompt, 'user', sourceName);
     const thinkingBubble = appendCodingMessage('', 'ai');
     if (state.webSearchEnabled) thinkingBubble?.classList.add('chat-bubble--search');
     const thinkingAnimation = startThinkingAnimation(thinkingBubble, state.webSearchEnabled);
@@ -228,8 +271,9 @@ async function generateCode() {
         const { data, ok } = await sendChatRequest({
             message,
             model: state.currentModel,
+            history: codingHistory,
             signal: requestController.signal,
-            systemInstruction: CODING_SYSTEM_INSTRUCTION,
+            systemInstruction: [state.activeAgent?.systemInstruction, CODING_SYSTEM_INSTRUCTION].filter(Boolean).join('\n\n'),
             webSearch: state.webSearchEnabled,
             onProgress: state.webSearchEnabled ? (progress) => thinkingAnimation.update(progress) : undefined,
         });
@@ -244,19 +288,31 @@ async function generateCode() {
             throw new Error('The model returned an empty response.');
         }
 
+        dom.codingPrompt.value = '';
+        dom.codingPrompt.style.height = '';
+        if (dom.codingSource) dom.codingSource.value = '';
+        if (dom.codingContextChip) dom.codingContextChip.hidden = true;
+        codingSourceName = '';
+
+        codingHistory.push(
+            { role: 'user', text: message },
+            { role: 'model', text: data.reply },
+        );
         await typeText(thinkingBubble, data.reply, CONFIG.TYPEWRITER.SPEED_MS, requestController.signal);
         renderSearchSources(thinkingBubble, data.sources, data.images, data.image_search_error);
         if (dom.codingMessages) dom.codingMessages.scrollTop = dom.codingMessages.scrollHeight;
         setSourceStatus('');
     } catch (error) {
         thinkingAnimation.stop();
-        thinkingBubble.innerHTML = '';
         if (codingRequestController !== requestController) return;
         if (error.name === 'AbortError') {
+            thinkingBubble.innerHTML = '';
+            if (codingSourceName && dom.codingContextChip) dom.codingContextChip.hidden = false;
             setSourceStatus('Request cancelled.');
             return;
         }
-        showCodingError(error.message || 'The coding request failed.');
+        if (codingSourceName && dom.codingContextChip) dom.codingContextChip.hidden = false;
+        showCodingError(error.message || 'The coding request failed.', thinkingBubble);
         setSourceStatus('The request did not complete.');
     } finally {
         if (codingRequestController === requestController) {
