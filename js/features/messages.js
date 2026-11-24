@@ -176,7 +176,7 @@ function renderUserBubbleText(bubble, text) {
     });
 }
 
-function createBubbleActions(role) {
+export function createBubbleActions(role) {
     const actions = document.createElement('div');
     actions.className = 'bubble-actions';
 
@@ -356,7 +356,7 @@ function setButtonCopyFeedback(button, originalHTML) {
     }, 1500);
 }
 
-function copyBubbleText(button, bubble) {
+export function copyBubbleText(button, bubble) {
     const text = bubble.dataset.rawText || bubble.textContent || '';
     navigator.clipboard.writeText(text).catch(() => {});
     const svg = button.querySelector('svg');
@@ -365,7 +365,7 @@ function copyBubbleText(button, bubble) {
     }
 }
 
-function toggleBubbleLike(button, bubble, activeColor, otherSelector) {
+export function toggleBubbleLike(button, bubble, activeColor, otherSelector) {
     const isActive = button.style.color === activeColor;
     button.style.color = isActive ? '' : activeColor;
     const wrapper = bubble.closest('.message-wrapper');

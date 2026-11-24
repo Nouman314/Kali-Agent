@@ -2,7 +2,14 @@ import { dom } from '../dom.js';
 import { sendChatRequest } from '../services/chatApi.js';
 import { state } from '../state.js';
 import { CONFIG } from '../config.js';
-import { renderSearchSources, startThinkingAnimation, typeText } from './messages.js';
+import {
+    copyBubbleText,
+    createBubbleActions,
+    renderSearchSources,
+    startThinkingAnimation,
+    toggleBubbleLike,
+    typeText,
+} from './messages.js';
 import { createAttachmentChip, getAttachmentKind, formatFileSize } from './attachments.js';
 
 const MAX_SOURCE_CHARS = 20000;
@@ -100,6 +107,13 @@ function appendCodingMessage(text, role, attachments = []) {
         });
         wrapper.appendChild(attachmentRow);
     }
+    if (role === 'user') {
+        const actions = createBubbleActions(role);
+        if (codingRequestController) {
+            actions.querySelector('[title="Edit"]')?.classList.add('disabled');
+        }
+        wrapper.appendChild(actions);
+    }
 
     dom.codingMessages.appendChild(wrapper);
     dom.codingMessages.scrollTop = dom.codingMessages.scrollHeight;
@@ -126,6 +140,8 @@ function setCodingLoading(isLoading) {
 
     dom.codingSendBtn.disabled = isLoading;
     dom.codingSendBtn.setAttribute('aria-label', isLoading ? 'Generating code' : 'Generate code');
+    dom.codingMessages?.querySelectorAll('.message-wrapper--user .bubble-actions [title="Edit"]')
+        .forEach((button) => button.classList.toggle('disabled', isLoading));
 }
 
 function resizeCodingPrompt() {
@@ -138,6 +154,101 @@ function restoreCodingPrompt(prompt) {
     if (!prompt || !dom.codingPrompt || dom.codingPrompt.value) return;
     dom.codingPrompt.value = prompt;
     resizeCodingPrompt();
+}
+
+function restartCodingRequest(request, prompt = request.prompt) {
+    if (codingRequestController) return;
+
+    const userWrapper = request.userBubble?.closest('.message-wrapper');
+    if (!userWrapper) return;
+
+    let message = userWrapper;
+    while (message) {
+        const nextMessage = message.nextElementSibling;
+        message.remove();
+        message = nextMessage;
+    }
+
+    codingHistory = request.history.slice();
+    generateCode({
+        prompt,
+        source: request.source,
+        attachments: request.attachments.slice(),
+        history: request.history.slice(),
+        language: request.language,
+    });
+}
+
+function beginCodingBubbleEdit(bubble, actions) {
+    if (codingRequestController) return;
+    const request = bubble._codingRequest;
+    if (!request) return;
+
+    const currentText = bubble.dataset.rawText || bubble.textContent || '';
+    actions.style.display = 'none';
+    bubble.textContent = '';
+    bubble.classList.add('chat-bubble--editing');
+
+    const editContainer = document.createElement('div');
+    editContainer.className = 'edit-container';
+    editContainer.innerHTML = `
+        <textarea class="edit-textarea"></textarea>
+        <div class="edit-actions">
+            <button type="button" class="edit-btn edit-btn-cancel">Cancel</button>
+            <button type="button" class="edit-btn edit-btn-save">Save &amp; Send</button>
+        </div>
+    `;
+    bubble.appendChild(editContainer);
+
+    const textarea = editContainer.querySelector('.edit-textarea');
+    textarea.value = currentText;
+    textarea.focus();
+    textarea.style.height = `${textarea.scrollHeight}px`;
+    textarea.addEventListener('input', () => {
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    });
+
+    editContainer.querySelector('.edit-btn-cancel').addEventListener('click', () => {
+        bubble.classList.remove('chat-bubble--editing');
+        bubble.textContent = currentText;
+        actions.style.display = 'flex';
+    });
+    editContainer.querySelector('.edit-btn-save').addEventListener('click', () => {
+        const prompt = textarea.value.trim();
+        if (!prompt && !request.source && !request.attachments.length) return;
+        restartCodingRequest(request, prompt);
+    });
+}
+
+function handleCodingBubbleActionClick(event) {
+    const button = event.target.closest('.bubble-actions button');
+    if (!button || !dom.codingMessages.contains(button)) return;
+
+    const wrapper = button.closest('.message-wrapper');
+    const bubble = wrapper?.querySelector('.chat-bubble');
+    if (!bubble) return;
+
+    const title = button.getAttribute('title');
+    if (title === 'Copy') {
+        copyBubbleText(button, bubble);
+    } else if (title === 'Edit') {
+        if (!button.classList.contains('disabled')) {
+            beginCodingBubbleEdit(bubble, wrapper.querySelector('.bubble-actions'));
+        }
+    } else if (title === 'Like') {
+        toggleBubbleLike(button, bubble, '#4b3fd8', '[title="Dislike"]');
+    } else if (title === 'Dislike') {
+        toggleBubbleLike(button, bubble, '#ef4444', '[title="Like"]');
+    } else if (title === 'Retry') {
+        const request = bubble._codingRequest;
+        if (request && !codingRequestController) {
+            const icon = button.querySelector('svg');
+            icon?.classList.add('spin-once');
+            icon?.addEventListener('animationend', () => icon.classList.remove('spin-once'), { once: true });
+            restartCodingRequest(request);
+        }
+    }
 }
 
 function clearCodingTask() {
@@ -302,10 +413,15 @@ function readCodeFile(event) {
     setSourceStatus(rejected);
 }
 
-async function generateCode() {
-    const source = dom.codingSource?.value || '';
-    const promptDraft = dom.codingPrompt?.value || '';
-    const prompt = promptDraft.trim() || (source || state.codingAttachments.length ? 'Please analyze the attached file(s) and explain their contents.' : '');
+async function generateCode(request = {}) {
+    const hasPromptOverride = Object.prototype.hasOwnProperty.call(request, 'prompt');
+    const hasSourceOverride = Object.prototype.hasOwnProperty.call(request, 'source');
+    const source = hasSourceOverride ? request.source : (dom.codingSource?.value || '');
+    const promptDraft = hasPromptOverride ? request.prompt : (dom.codingPrompt?.value || '');
+    const attachments = request.attachments || state.codingAttachments.slice();
+    const history = request.history || codingHistory.slice();
+    const language = request.language || dom.codingLanguage?.value || 'Rust';
+    const prompt = promptDraft.trim() || (source || attachments.length ? 'Please analyze the attached file(s) and explain their contents.' : '');
     if (!prompt) {
         setSourceStatus('Describe what you want the coding assistant to do.');
         dom.codingPrompt?.focus();
@@ -314,23 +430,35 @@ async function generateCode() {
 
     if (codingRequestController) return;
 
-    const language = dom.codingLanguage?.value || 'Rust';
     const message = [
         `Language: ${language}`,
         `Task: ${prompt}`,
-        source ? `Source code, page text, or error context:\n${source}` : (state.codingAttachments.length ? 'Use the attached file(s) as the source.' : 'No source was provided.'),
+        source ? `Source code, page text, or error context:\n${source}` : (attachments.length ? 'Use the attached file(s) as the source.' : 'No source was provided.'),
     ].join('\n\n');
 
     const requestController = new AbortController();
     codingRequestController = requestController;
     revealCodingContext();
-    if (dom.codingContextChip) dom.codingContextChip.hidden = true;
-    appendCodingMessage(prompt, 'user', state.codingAttachments.slice());
-    if (dom.codingPrompt) {
+    if (!hasPromptOverride && dom.codingContextChip) dom.codingContextChip.hidden = true;
+    const userBubble = appendCodingMessage(prompt, 'user', attachments);
+    const codingRequest = {
+        prompt,
+        source,
+        attachments: attachments.slice(),
+        history: history.slice(),
+        language,
+        userBubble,
+    };
+    if (userBubble) {
+        userBubble.dataset.rawText = prompt;
+        userBubble._codingRequest = codingRequest;
+    }
+    if (!hasPromptOverride && dom.codingPrompt) {
         dom.codingPrompt.value = '';
         dom.codingPrompt.style.height = '';
     }
     const thinkingBubble = appendCodingMessage('', 'ai');
+    if (thinkingBubble) thinkingBubble._codingRequest = codingRequest;
     if (state.webSearchEnabled) thinkingBubble?.classList.add('chat-bubble--search');
     const thinkingAnimation = startThinkingAnimation(thinkingBubble, state.webSearchEnabled);
     setCodingLoading(true);
@@ -339,13 +467,12 @@ async function generateCode() {
     try {
         const requestOptions = {
             model: state.currentModel,
-            history: codingHistory,
+            history,
             signal: requestController.signal,
             systemInstruction: [state.activeAgent?.systemInstruction, CODING_SYSTEM_INSTRUCTION].filter(Boolean).join('\n\n'),
             webSearch: state.webSearchEnabled,
             onProgress: state.webSearchEnabled ? (progress) => thinkingAnimation.update(progress) : undefined,
         };
-        const attachments = state.codingAttachments.slice();
         let requestMessage = message;
         let result = await sendChatRequest({ ...requestOptions, message: requestMessage, attachments });
 
@@ -373,20 +500,25 @@ async function generateCode() {
             throw new Error('The model returned an empty response.');
         }
 
-        if (dom.codingSource) dom.codingSource.value = '';
-        if (dom.codingContextChip) dom.codingContextChip.hidden = true;
-        codingSourceName = '';
-        state.codingAttachments.forEach((entry) => {
-            if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
-        });
-        state.codingAttachments = [];
+        if (!hasSourceOverride && dom.codingSource) dom.codingSource.value = '';
+        if (!hasPromptOverride && dom.codingContextChip) dom.codingContextChip.hidden = true;
+        if (!hasPromptOverride) {
+            codingSourceName = '';
+            state.codingAttachments.forEach((entry) => {
+                if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+            });
+            state.codingAttachments = [];
+        }
 
+        codingHistory = history.slice();
         codingHistory.push(
             { role: 'user', text: typeof data.history_message === 'string' ? data.history_message : requestMessage },
             { role: 'model', text: data.reply },
         );
+        thinkingBubble.dataset.rawText = data.reply;
         await typeText(thinkingBubble, data.reply, CONFIG.TYPEWRITER.SPEED_MS, requestController.signal);
         renderSearchSources(thinkingBubble, data.sources, data.images, data.image_search_error);
+        thinkingBubble.closest('.message-wrapper')?.appendChild(createBubbleActions('ai'));
         if (dom.codingMessages) dom.codingMessages.scrollTop = dom.codingMessages.scrollHeight;
         setSourceStatus('');
     } catch (error) {
@@ -394,12 +526,12 @@ async function generateCode() {
         if (codingRequestController !== requestController) return;
         if (error.name === 'AbortError') {
             thinkingBubble.innerHTML = '';
-            restoreCodingPrompt(promptDraft);
+            if (!hasPromptOverride) restoreCodingPrompt(promptDraft);
             renderCodingAttachments();
             setSourceStatus('Request cancelled.');
             return;
         }
-        restoreCodingPrompt(promptDraft);
+        if (!hasPromptOverride) restoreCodingPrompt(promptDraft);
         renderCodingAttachments();
         showCodingError(error.message || 'The coding request failed.', thinkingBubble);
         setSourceStatus('The request did not complete.');
@@ -430,6 +562,7 @@ export function bindCodingInteractions() {
     dom.codingSendBtn?.addEventListener('click', generateCode);
     dom.codingNewTaskBtn?.addEventListener('click', clearCodingTask);
     dom.codingOpenWindowBtn?.addEventListener('click', openCodingWindow);
+    dom.codingMessages?.addEventListener('click', handleCodingBubbleActionClick);
 
     dom.codingPrompt?.addEventListener('input', () => {
         resizeCodingPrompt();
