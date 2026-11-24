@@ -13,6 +13,11 @@ const CODING_SYSTEM_INSTRUCTION = [
 let codingBound = false;
 let codingRequestController = null;
 
+function revealCodingContext() {
+    if (dom.codingWelcome) dom.codingWelcome.hidden = true;
+    if (dom.codingContext) dom.codingContext.hidden = false;
+}
+
 function setSourceStatus(message) {
     if (dom.codingSourceStatus) {
         dom.codingSourceStatus.textContent = message;
@@ -34,6 +39,8 @@ function setCodingLoading(isLoading) {
 }
 
 function showCodingResult(before, after = '') {
+    if (dom.codingWelcome) dom.codingWelcome.hidden = true;
+    if (dom.codingContext) dom.codingContext.hidden = false;
     if (dom.codingBefore) {
         dom.codingBefore.textContent = before || 'No source provided.';
     }
@@ -54,6 +61,8 @@ function clearCodingTask() {
     if (dom.codingPrompt) dom.codingPrompt.value = '';
     if (dom.codingSource) dom.codingSource.value = '';
     if (dom.codingResult) dom.codingResult.hidden = true;
+    if (dom.codingContext) dom.codingContext.hidden = true;
+    if (dom.codingWelcome) dom.codingWelcome.hidden = false;
     if (dom.codingBefore) dom.codingBefore.textContent = '';
     if (dom.codingAfter) dom.codingAfter.textContent = '';
     if (dom.codingCopyBtn) dom.codingCopyBtn.disabled = true;
@@ -65,6 +74,7 @@ function clearCodingTask() {
 
 async function pasteSource() {
     if (!dom.codingSource) return;
+    revealCodingContext();
 
     try {
         const text = await navigator.clipboard.readText();
@@ -82,6 +92,7 @@ async function pasteSource() {
 
 async function readCurrentPage() {
     if (!dom.codingPageBtn || !dom.codingSource) return;
+    revealCodingContext();
     if (!globalThis.chrome?.tabs || !globalThis.chrome?.scripting) {
         setSourceStatus('Current-page capture is available in the extension side panel.');
         return;
@@ -142,6 +153,7 @@ async function readCodeFile(event) {
     const [file] = event.target.files || [];
     event.target.value = '';
     if (!file || !dom.codingSource) return;
+    revealCodingContext();
 
     try {
         const text = await file.slice(0, MAX_SOURCE_CHARS * 4).text();

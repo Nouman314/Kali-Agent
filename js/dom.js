@@ -80,6 +80,8 @@ export const dom = {
     codingSendBtn: query('#codingSendBtn'),
     codingNewTaskBtn: query('#codingNewTaskBtn'),
     codingOpenWindowBtn: query('#codingOpenWindowBtn'),
+    codingWelcome: query('#codingWelcome'),
+    codingContext: query('#codingContext'),
     codingResult: query('#codingResult'),
     codingBefore: query('#codingBefore'),
     codingAfter: query('#codingAfter'),
