@@ -5,6 +5,58 @@ import { state } from '../state.js';
 let attachmentErrorTimer = null;
 let trayBound = false;
 
+const CODE_ATTACHMENT_PALETTE = {
+    rs: ['#fff7ed', '#c2410c'],
+    py: ['#eff6ff', '#2563eb'],
+    js: ['#fef9c3', '#a16207'],
+    jsx: ['#fef9c3', '#a16207'],
+    mjs: ['#fef9c3', '#a16207'],
+    cjs: ['#fef9c3', '#a16207'],
+    ts: ['#dbeafe', '#1d4ed8'],
+    tsx: ['#dbeafe', '#1d4ed8'],
+    java: ['#fee2e2', '#b91c1c'],
+    c: ['#e0e7ff', '#4338ca'],
+    h: ['#e0e7ff', '#4338ca'],
+    cpp: ['#e0e7ff', '#4338ca'],
+    hpp: ['#e0e7ff', '#4338ca'],
+    cc: ['#e0e7ff', '#4338ca'],
+    hh: ['#e0e7ff', '#4338ca'],
+    cs: ['#f3e8ff', '#7e22ce'],
+    go: ['#cffafe', '#0e7490'],
+    rb: ['#ffe4e6', '#be123c'],
+    php: ['#e0e7ff', '#4338ca'],
+    swift: ['#ffedd5', '#c2410c'],
+    kt: ['#f3e8ff', '#7e22ce'],
+    kts: ['#f3e8ff', '#7e22ce'],
+    scala: ['#fee2e2', '#b91c1c'],
+    sh: ['#e5e7eb', '#374151'],
+    bash: ['#e5e7eb', '#374151'],
+    zsh: ['#e5e7eb', '#374151'],
+    ps1: ['#dbeafe', '#1e40af'],
+    psm1: ['#dbeafe', '#1e40af'],
+    sql: ['#dbeafe', '#1d4ed8'],
+    html: ['#ffedd5', '#c2410c'],
+    htm: ['#ffedd5', '#c2410c'],
+    css: ['#dbeafe', '#1d4ed8'],
+    scss: ['#fce7f3', '#be185d'],
+    sass: ['#fce7f3', '#be185d'],
+    less: ['#dbeafe', '#1e40af'],
+    json: ['#fef3c7', '#92400e'],
+    xml: ['#ffedd5', '#9a3412'],
+    yaml: ['#f3e8ff', '#6b21a8'],
+    yml: ['#f3e8ff', '#6b21a8'],
+    toml: ['#f3e8ff', '#6b21a8'],
+    ini: ['#f3e8ff', '#6b21a8'],
+    cfg: ['#f3e8ff', '#6b21a8'],
+    txt: ['#f3f4f6', '#4b5563'],
+    md: ['#e5e7eb', '#374151'],
+    markdown: ['#e5e7eb', '#374151'],
+};
+
+const CODE_ATTACHMENT_LABELS = {
+    markdown: 'MD',
+};
+
 export function formatFileSize(bytes) {
     if (!Number.isFinite(bytes)) return '';
     if (bytes < 1024) return `${bytes} B`;
@@ -65,6 +117,13 @@ export function createAttachmentChip(entry, variant = 'composer') {
         } else if (entry.kind === 'docx') {
             icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M5 15v6h1.5a1.5 1.5 0 0 0 1.5 -1.5v-3a1.5 1.5 0 0 0 -1.5 -1.5h-1.5" /><path d="M11 16.5v3a1.5 1.5 0 0 0 3 0v-3a1.5 1.5 0 0 0 -3 0z" /><path d="M20 15h-1.5a1.5 1.5 0 0 0 -1.5 1.5v3a1.5 1.5 0 0 0 1.5 1.5h1.5" /></svg>';
             icon.classList.add('attachment-icon--docx');
+        } else if (entry.kind === 'code') {
+            const extension = entry.file.name.split('.').pop().toLowerCase();
+            const [background, color] = CODE_ATTACHMENT_PALETTE[extension] || ['#f3f4f6', '#4b5563'];
+            icon.classList.add('attachment-icon--code');
+            icon.textContent = CODE_ATTACHMENT_LABELS[extension] || extension.toUpperCase();
+            icon.style.backgroundColor = background;
+            icon.style.color = color;
         } else {
             icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M5 21v-6h1.5a1.5 1.5 0 0 1 1.5 1.5v0a1.5 1.5 0 0 1 -1.5 1.5h-1.5" /><path d="M11 21v-6h1.5a1.5 1.5 0 0 1 1.5 1.5v0a1.5 1.5 0 0 1 -1.5 1.5h-1.5" /><path d="M17 15h4" /><path d="M19 15v6" /></svg>';
             icon.classList.add('attachment-icon--ppt');

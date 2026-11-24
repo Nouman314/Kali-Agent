@@ -229,55 +229,11 @@
 }
 
 .coding-context-chip {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
     max-width: 100%;
-    margin: 0 12px 8px;
 }
 
 .coding-context-chip[hidden] {
     display: none !important;
-}
-
-.coding-attachment-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    max-width: 100%;
-    min-width: 0;
-    padding: 5px 7px 5px 9px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 999px;
-    background: #ffffff;
-    color: #4b5563;
-    font-size: 11px;
-}
-
-.coding-attachment-item > span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.coding-attachment-remove {
-    display: inline-flex;
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: #6b7280;
-    cursor: pointer;
-    font: 16px/1 var(--font-sans);
-}
-
-.coding-attachment-remove:hover {
-    background: #f3f4f6;
-    color: #111111;
 }
 
 .coding-input-wrapper .model-option {

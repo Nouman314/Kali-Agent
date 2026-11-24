@@ -10,7 +10,7 @@ import {
     toggleBubbleLike,
     typeText,
 } from './messages.js';
-import { createAttachmentChip, getAttachmentKind, formatFileSize } from './attachments.js';
+import { createAttachmentChip, getAttachmentKind } from './attachments.js';
 
 const MAX_SOURCE_CHARS = 20000;
 const CODING_TEXT_EXTENSIONS = new Set([
@@ -356,25 +356,22 @@ function renderCodingAttachments() {
     if (!dom.codingContextChip) return;
     dom.codingContextChip.replaceChildren();
     state.codingAttachments.forEach((entry) => {
-        const chip = document.createElement('span');
-        chip.className = 'coding-attachment-item';
-        const label = document.createElement('span');
-        label.textContent = `${entry.file.name} · ${formatFileSize(entry.file.size)}`;
-        label.title = entry.file.name;
-        const remove = document.createElement('button');
-        remove.type = 'button';
-        remove.className = 'coding-attachment-remove';
-        remove.setAttribute('aria-label', `Remove ${entry.file.name}`);
-        remove.textContent = '×';
-        remove.addEventListener('click', () => {
-            if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
-            state.codingAttachments = state.codingAttachments.filter((item) => item.id !== entry.id);
-            renderCodingAttachments();
-        });
-        chip.append(label, remove);
-        dom.codingContextChip.appendChild(chip);
+        dom.codingContextChip.appendChild(createAttachmentChip(entry, 'composer'));
     });
     dom.codingContextChip.hidden = !state.codingAttachments.length;
+}
+
+function removeCodingAttachment(event) {
+    const removeButton = event.target.closest('.attachment-remove');
+    if (!removeButton || !dom.codingContextChip?.contains(removeButton)) return;
+
+    const chip = removeButton.closest('.attachment-chip');
+    if (!chip) return;
+    const attachmentId = Number(chip.dataset.attachmentId);
+    const attachment = state.codingAttachments.find((entry) => entry.id === attachmentId);
+    if (attachment?.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
+    state.codingAttachments = state.codingAttachments.filter((entry) => entry.id !== attachmentId);
+    renderCodingAttachments();
 }
 
 function readCodeFile(event) {
@@ -559,6 +556,7 @@ export function bindCodingInteractions() {
     dom.codingPasteBtn?.addEventListener('click', pasteSource);
     dom.codingPageBtn?.addEventListener('click', readCurrentPage);
     dom.codingFileInput?.addEventListener('change', readCodeFile);
+    dom.codingContextChip?.addEventListener('click', removeCodingAttachment);
     dom.codingSendBtn?.addEventListener('click', generateCode);
     dom.codingNewTaskBtn?.addEventListener('click', clearCodingTask);
     dom.codingOpenWindowBtn?.addEventListener('click', openCodingWindow);
