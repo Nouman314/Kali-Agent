@@ -72,6 +72,7 @@ export function getAttachmentKind(file) {
     if (mime === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
     if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || name.endsWith('.docx')) return 'docx';
     if (mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || name.endsWith('.pptx')) return 'pptx';
+    if (mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || name.endsWith('.xlsx')) return 'xlsx';
     return 'unsupported';
 }
 
@@ -117,6 +118,12 @@ export function createAttachmentChip(entry, variant = 'composer') {
         } else if (entry.kind === 'docx') {
             icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M5 15v6h1.5a1.5 1.5 0 0 0 1.5 -1.5v-3a1.5 1.5 0 0 0 -1.5 -1.5h-1.5" /><path d="M11 16.5v3a1.5 1.5 0 0 0 3 0v-3a1.5 1.5 0 0 0 -3 0z" /><path d="M20 15h-1.5a1.5 1.5 0 0 0 -1.5 1.5v3a1.5 1.5 0 0 0 1.5 1.5h1.5" /></svg>';
             icon.classList.add('attachment-icon--docx');
+        } else if (entry.kind === 'pptx') {
+            icon.textContent = 'PPT';
+            icon.classList.add('attachment-icon--ppt', 'attachment-icon--file-label');
+        } else if (entry.kind === 'xlsx') {
+            icon.textContent = 'XLS';
+            icon.classList.add('attachment-icon--xlsx', 'attachment-icon--file-label');
         } else if (entry.kind === 'code') {
             const extension = entry.file.name.split('.').pop().toLowerCase();
             const [background, color] = CODE_ATTACHMENT_PALETTE[extension] || ['#f3f4f6', '#4b5563'];

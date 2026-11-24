@@ -134,6 +134,20 @@
     letter-spacing: -0.02em;
 }
 
+.attachment-icon--file-label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.attachment-icon--xlsx {
+    width: 30px;
+    height: 30px;
+    border-radius: 12px;
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
 .attachment-icon--ppt {
     width: 30px;
     height: 30px;

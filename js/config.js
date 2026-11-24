@@ -37,6 +37,7 @@ export const CONFIG = {
         MAX_INPUT_HEIGHT: 400,
         MIN_INPUT_HEIGHT: 100,
         MAX_ATTACHMENTS: 5,
+        MAX_CODING_ATTACHMENTS: 40,
         MAX_FILE_SIZE_BYTES: 10 * 1024 * 1024,
     },
     GRAMMAR: {

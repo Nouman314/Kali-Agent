@@ -8,6 +8,8 @@ Setup:
     3. python server.py  →  http://localhost:5000
 
 POST /chat            { "message": "...", "model": "...", "web_search": false }
+                      Multipart uploads support up to 5 files by default; Code tab
+                      requests set coding_mode=true to allow up to 40 files.
                       →  { "reply": "...", "sources": [...], "images": [...] }
                       Accepts prior conversation turns in the optional "history" array.
                       With Accept: application/x-ndjson, streams search progress and source URLs.
@@ -103,6 +105,7 @@ WEB_SEARCH_SYSTEM_INSTRUCTION = (
 )
 GRAMMAR_MAX_CHARS = 8000
 MAX_ATTACHMENTS = 5
+MAX_CODING_ATTACHMENTS = 40
 MAX_FILE_SIZE = 10 * 1024 * 1024
 TEXT_ATTACHMENT_LIMIT = 12000
 SUPPORTED_IMAGE_MIME_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp", "image/x-ms-bmp"}
@@ -221,9 +224,9 @@ def _is_supported_attachment(filename, mime_type):
     return mime_type.startswith("image/") or extension in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
 
 
-def _build_attachment_context(uploaded_files, user_message):
-    if len(uploaded_files) > MAX_ATTACHMENTS:
-        return None, None, "You can attach at most 5 files."
+def _build_attachment_context(uploaded_files, user_message, max_attachments=MAX_ATTACHMENTS):
+    if len(uploaded_files) > max_attachments:
+        return None, None, f"You can attach at most {max_attachments} files."
 
     prompt_parts = []
     summary_parts = []
@@ -404,13 +407,18 @@ def _generate_chat_reply(
     search_results,
     image_results,
     image_search_error,
+    max_attachments=MAX_ATTACHMENTS,
 ):
     contents = [
         genai.types.Content(role=entry["role"], parts=[genai.types.Part(text=entry["text"])])
         for entry in chat_history
     ]
 
-    attachment_parts, history_message, attachment_error = _build_attachment_context(upload_files, user_message)
+    attachment_parts, history_message, attachment_error = _build_attachment_context(
+        upload_files,
+        user_message,
+        max_attachments,
+    )
     if attachment_error:
         return {"error": attachment_error}, 400
 
@@ -461,6 +469,7 @@ def _stream_web_search_reply(
     system_instruction,
     upload_files,
     chat_history,
+    max_attachments=MAX_ATTACHMENTS,
 ):
     yield _ndjson_event("status", text="Searching the web...")
     try:
@@ -501,6 +510,7 @@ def _stream_web_search_reply(
             search_results=search_results,
             image_results=image_results,
             image_search_error=image_search_error,
+            max_attachments=max_attachments,
         )
         if status != 200:
             yield _ndjson_event("error", error=payload["error"])
@@ -520,12 +530,15 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 @app.route("/chat", methods=["POST"])
 def chat():
     is_multipart = request.content_type and request.content_type.startswith("multipart/form-data")
+    max_attachments = MAX_ATTACHMENTS
 
     if is_multipart:
         user_message = request.form.get("message", "").strip()
         selected_model = request.form.get("model") or DEFAULT_MODEL
         system_instruction = request.form.get("system_instruction") or SYSTEM_INSTRUCTION
         upload_files = request.files.getlist("attachments")
+        if request.form.get("coding_mode") == "true":
+            max_attachments = MAX_CODING_ATTACHMENTS
         use_web_search = _as_bool(request.form.get("web_search"))
         try:
             chat_history = json.loads(request.form.get("history", "[]"))
@@ -560,6 +573,7 @@ def chat():
                 system_instruction=system_instruction,
                 upload_files=upload_files,
                 chat_history=chat_history,
+                max_attachments=max_attachments,
             )),
             mimetype="application/x-ndjson",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
@@ -593,6 +607,7 @@ def chat():
             search_results=search_results,
             image_results=image_results,
             image_search_error=image_search_error,
+            max_attachments=max_attachments,
         )
         return jsonify(payload), status
     except Exception as exc:

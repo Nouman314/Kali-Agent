@@ -72,6 +72,7 @@ export const dom = {
     codingPrompt: query('#codingPrompt'),
     codingSource: query('#codingSource'),
     codingSourceStatus: query('#codingSourceStatus'),
+    codingAttachmentError: query('#codingAttachmentError'),
     codingLanguage: query('#codingLanguage'),
     codingPageBtn: query('#codingPageBtn'),
     codingPasteBtn: query('#codingPasteBtn'),

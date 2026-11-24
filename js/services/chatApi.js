@@ -16,6 +16,7 @@ export async function sendChatRequest({
     signal,
     systemInstruction,
     webSearch = false,
+    codingMode = false,
     onProgress,
 }) {
     const hasAttachments = attachments.length > 0;
@@ -32,6 +33,9 @@ export async function sendChatRequest({
         formData.append('history', JSON.stringify(history));
         if (systemInstruction) {
             formData.append('system_instruction', systemInstruction);
+        }
+        if (codingMode) {
+            formData.append('coding_mode', 'true');
         }
         attachments.forEach((entry) => {
             formData.append('attachments', entry.file, entry.file.name);

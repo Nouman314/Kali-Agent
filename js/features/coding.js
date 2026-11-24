@@ -29,6 +29,7 @@ const CODING_SYSTEM_INSTRUCTION = [
 
 let codingBound = false;
 let codingRequestController = null;
+let codingAttachmentErrorTimer = null;
 let codingSourceName = '';
 let codingHistory = [];
 
@@ -123,6 +124,20 @@ function appendCodingMessage(text, role, attachments = []) {
 function setSourceStatus(message) {
     if (dom.codingSourceStatus) {
         dom.codingSourceStatus.textContent = message;
+    }
+}
+
+function showCodingAttachmentError(message) {
+    if (!dom.codingAttachmentError) return;
+
+    clearTimeout(codingAttachmentErrorTimer);
+    dom.codingAttachmentError.textContent = message;
+    dom.codingAttachmentError.hidden = !message;
+    if (message) {
+        codingAttachmentErrorTimer = setTimeout(() => {
+            dom.codingAttachmentError.hidden = true;
+            dom.codingAttachmentError.textContent = '';
+        }, 3500);
     }
 }
 
@@ -254,6 +269,7 @@ function handleCodingBubbleActionClick(event) {
 function clearCodingTask() {
     codingRequestController?.abort();
     codingRequestController = null;
+    showCodingAttachmentError('');
     if (dom.codingPrompt) dom.codingPrompt.value = '';
     if (dom.codingPrompt) dom.codingPrompt.style.height = '';
     if (dom.codingSource) dom.codingSource.value = '';
@@ -372,6 +388,7 @@ function removeCodingAttachment(event) {
     if (attachment?.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
     state.codingAttachments = state.codingAttachments.filter((entry) => entry.id !== attachmentId);
     renderCodingAttachments();
+    showCodingAttachmentError('');
 }
 
 function readCodeFile(event) {
@@ -379,7 +396,7 @@ function readCodeFile(event) {
     event.target.value = '';
     if (!files.length) return;
     if (codingRequestController) {
-        setSourceStatus('Wait for the current request to finish before adding files.');
+        showCodingAttachmentError('Wait for the current request to finish before adding files.');
         return;
     }
 
@@ -396,18 +413,18 @@ function readCodeFile(event) {
             rejected = `${file.name} is larger than 10 MB.`;
             continue;
         }
-        if (state.codingAttachments.length >= CONFIG.COMPOSER.MAX_ATTACHMENTS) {
-            rejected = `You can attach up to ${CONFIG.COMPOSER.MAX_ATTACHMENTS} files at a time.`;
-            break;
-        }
         const duplicate = state.codingAttachments.some((entry) => entry.file.name === file.name && entry.file.size === file.size && entry.file.lastModified === file.lastModified);
         if (duplicate) continue;
+        if (state.codingAttachments.length >= CONFIG.COMPOSER.MAX_CODING_ATTACHMENTS) {
+            rejected = `You can attach up to ${CONFIG.COMPOSER.MAX_CODING_ATTACHMENTS} files at a time.`;
+            break;
+        }
         const languageByExtension = { py: 'Python', js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript', cjs: 'JavaScript', ts: 'TypeScript', tsx: 'TypeScript' };
         if (kind === 'code' && dom.codingLanguage) dom.codingLanguage.value = languageByExtension[extension] || 'Other';
         state.codingAttachments.push({ id: ++state.attachmentIdCounter, file, kind, previewUrl: kind === 'image' ? URL.createObjectURL(file) : '' });
     }
     renderCodingAttachments();
-    setSourceStatus(rejected);
+    showCodingAttachmentError(rejected);
 }
 
 async function generateCode(request = {}) {
@@ -435,6 +452,7 @@ async function generateCode(request = {}) {
 
     const requestController = new AbortController();
     codingRequestController = requestController;
+    showCodingAttachmentError('');
     revealCodingContext();
     if (!hasPromptOverride && dom.codingContextChip) dom.codingContextChip.hidden = true;
     const userBubble = appendCodingMessage(prompt, 'user', attachments);
@@ -468,6 +486,7 @@ async function generateCode(request = {}) {
             signal: requestController.signal,
             systemInstruction: [state.activeAgent?.systemInstruction, CODING_SYSTEM_INSTRUCTION].filter(Boolean).join('\n\n'),
             webSearch: state.webSearchEnabled,
+            codingMode: true,
             onProgress: state.webSearchEnabled ? (progress) => thinkingAnimation.update(progress) : undefined,
         };
         let requestMessage = message;
