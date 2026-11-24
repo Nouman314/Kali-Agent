@@ -3,7 +3,7 @@ import { sendChatRequest } from '../services/chatApi.js';
 import { state } from '../state.js';
 import { CONFIG } from '../config.js';
 import { renderSearchSources, startThinkingAnimation, typeText } from './messages.js';
-import { getAttachmentKind, formatFileSize } from './attachments.js';
+import { createAttachmentChip, getAttachmentKind, formatFileSize } from './attachments.js';
 
 const MAX_SOURCE_CHARS = 20000;
 const CODING_TEXT_EXTENSIONS = new Set([
@@ -29,7 +29,7 @@ function revealCodingContext() {
     if (dom.codingWelcome) dom.codingWelcome.hidden = true;
 }
 
-function appendCodingMessage(text, role, attachmentName = '') {
+function appendCodingMessage(text, role, attachments = []) {
     if (!dom.codingMessages) return null;
     if (dom.codingWelcome) dom.codingWelcome.hidden = true;
 
@@ -89,15 +89,18 @@ function appendCodingMessage(text, role, attachmentName = '') {
         });
     } else {
         bubble.textContent = text;
-        if (attachmentName) {
-            const attachment = document.createElement('div');
-            attachment.className = 'coding-file-reference';
-            attachment.textContent = attachmentName;
-            bubble.appendChild(attachment);
-        }
     }
 
     wrapper.appendChild(bubble);
+    if (role === 'user' && attachments.length) {
+        const attachmentRow = document.createElement('div');
+        attachmentRow.className = 'message-attachments';
+        attachments.forEach((entry) => {
+            attachmentRow.appendChild(createAttachmentChip(entry, 'bubble'));
+        });
+        wrapper.appendChild(attachmentRow);
+    }
+
     dom.codingMessages.appendChild(wrapper);
     dom.codingMessages.scrollTop = dom.codingMessages.scrollHeight;
     return bubble;
@@ -125,10 +128,23 @@ function setCodingLoading(isLoading) {
     dom.codingSendBtn.setAttribute('aria-label', isLoading ? 'Generating code' : 'Generate code');
 }
 
+function resizeCodingPrompt() {
+    if (!dom.codingPrompt) return;
+    dom.codingPrompt.style.height = 'auto';
+    dom.codingPrompt.style.height = `${dom.codingPrompt.scrollHeight}px`;
+}
+
+function restoreCodingPrompt(prompt) {
+    if (!prompt || !dom.codingPrompt || dom.codingPrompt.value) return;
+    dom.codingPrompt.value = prompt;
+    resizeCodingPrompt();
+}
+
 function clearCodingTask() {
     codingRequestController?.abort();
     codingRequestController = null;
     if (dom.codingPrompt) dom.codingPrompt.value = '';
+    if (dom.codingPrompt) dom.codingPrompt.style.height = '';
     if (dom.codingSource) dom.codingSource.value = '';
     if (dom.codingWelcome) dom.codingWelcome.hidden = false;
     if (dom.codingMessages) {
@@ -288,8 +304,8 @@ function readCodeFile(event) {
 
 async function generateCode() {
     const source = dom.codingSource?.value || '';
-    const sourceName = [codingSourceName, ...state.codingAttachments.map((entry) => entry.file.name)].filter(Boolean).join(', ');
-    const prompt = dom.codingPrompt?.value.trim() || (source || state.codingAttachments.length ? 'Please analyze the attached file(s) and explain their contents.' : '');
+    const promptDraft = dom.codingPrompt?.value || '';
+    const prompt = promptDraft.trim() || (source || state.codingAttachments.length ? 'Please analyze the attached file(s) and explain their contents.' : '');
     if (!prompt) {
         setSourceStatus('Describe what you want the coding assistant to do.');
         dom.codingPrompt?.focus();
@@ -309,7 +325,11 @@ async function generateCode() {
     codingRequestController = requestController;
     revealCodingContext();
     if (dom.codingContextChip) dom.codingContextChip.hidden = true;
-    appendCodingMessage(prompt, 'user', sourceName);
+    appendCodingMessage(prompt, 'user', state.codingAttachments.slice());
+    if (dom.codingPrompt) {
+        dom.codingPrompt.value = '';
+        dom.codingPrompt.style.height = '';
+    }
     const thinkingBubble = appendCodingMessage('', 'ai');
     if (state.webSearchEnabled) thinkingBubble?.classList.add('chat-bubble--search');
     const thinkingAnimation = startThinkingAnimation(thinkingBubble, state.webSearchEnabled);
@@ -353,8 +373,6 @@ async function generateCode() {
             throw new Error('The model returned an empty response.');
         }
 
-        dom.codingPrompt.value = '';
-        dom.codingPrompt.style.height = '';
         if (dom.codingSource) dom.codingSource.value = '';
         if (dom.codingContextChip) dom.codingContextChip.hidden = true;
         codingSourceName = '';
@@ -376,10 +394,12 @@ async function generateCode() {
         if (codingRequestController !== requestController) return;
         if (error.name === 'AbortError') {
             thinkingBubble.innerHTML = '';
+            restoreCodingPrompt(promptDraft);
             renderCodingAttachments();
             setSourceStatus('Request cancelled.');
             return;
         }
+        restoreCodingPrompt(promptDraft);
         renderCodingAttachments();
         showCodingError(error.message || 'The coding request failed.', thinkingBubble);
         setSourceStatus('The request did not complete.');
@@ -412,8 +432,7 @@ export function bindCodingInteractions() {
     dom.codingOpenWindowBtn?.addEventListener('click', openCodingWindow);
 
     dom.codingPrompt?.addEventListener('input', () => {
-        dom.codingPrompt.style.height = 'auto';
-        dom.codingPrompt.style.height = `${dom.codingPrompt.scrollHeight}px`;
+        resizeCodingPrompt();
     });
     dom.codingPrompt?.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
