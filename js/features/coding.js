@@ -15,7 +15,44 @@ let codingRequestController = null;
 
 function revealCodingContext() {
     if (dom.codingWelcome) dom.codingWelcome.hidden = true;
-    if (dom.codingContext) dom.codingContext.hidden = false;
+}
+
+function appendCodingMessage(text, role) {
+    if (!dom.codingMessages) return null;
+    if (dom.codingWelcome) dom.codingWelcome.hidden = true;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = `message-wrapper message-wrapper--${role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble chat-bubble--${role}`;
+    Object.assign(bubble.style, {
+        maxWidth: role === 'user' ? '80%' : '95%',
+        padding: role === 'user' ? '8px 10px 10px' : '7px 8px 10px 17px',
+        borderRadius: role === 'user' ? '18px 18px 4px 18px' : '0',
+        marginBottom: '4px',
+        lineHeight: '1.62',
+        fontSize: '14px',
+        fontFamily: 'var(--font-sans)',
+        wordBreak: 'break-word',
+        background: role === 'user' ? 'linear-gradient(135deg, #6073ea, #4b3fd8)' : 'transparent',
+        color: role === 'user' ? '#fff' : '#111111',
+        border: 'none',
+    });
+
+    if (role === 'ai') {
+        bubble.innerHTML = globalThis.marked?.parse ? globalThis.marked.parse(text) : text;
+        bubble.querySelectorAll('pre code').forEach((block) => {
+            globalThis.hljs?.highlightElement(block);
+        });
+    } else {
+        bubble.textContent = text;
+    }
+
+    wrapper.appendChild(bubble);
+    dom.codingMessages.appendChild(wrapper);
+    dom.codingMessages.scrollTop = dom.codingMessages.scrollHeight;
+    return bubble;
 }
 
 function setSourceStatus(message) {
@@ -25,10 +62,14 @@ function setSourceStatus(message) {
 }
 
 function showCodingError(message) {
-    if (!dom.codingError) return;
-
-    dom.codingError.textContent = message;
-    dom.codingError.hidden = !message;
+    if (!message) return;
+    const thinking = dom.codingMessages?.querySelector('.coding-thinking');
+    if (thinking) {
+        thinking.classList.remove('coding-thinking');
+        thinking.textContent = message;
+        return;
+    }
+    appendCodingMessage(message, 'ai');
 }
 
 function setCodingLoading(isLoading) {
@@ -40,19 +81,18 @@ function setCodingLoading(isLoading) {
 
 function showCodingResult(before, after = '') {
     if (dom.codingWelcome) dom.codingWelcome.hidden = true;
-    if (dom.codingContext) dom.codingContext.hidden = false;
-    if (dom.codingBefore) {
-        dom.codingBefore.textContent = before || 'No source provided.';
+    if (!after) return;
+    const thinking = dom.codingMessages?.querySelector('.coding-thinking');
+    if (thinking) {
+        thinking.classList.remove('coding-thinking');
+        thinking.innerHTML = globalThis.marked?.parse ? globalThis.marked.parse(after) : after;
+        thinking.querySelectorAll('pre code').forEach((block) => {
+            globalThis.hljs?.highlightElement(block);
+        });
+        dom.codingMessages.scrollTop = dom.codingMessages.scrollHeight;
+        return;
     }
-    if (dom.codingAfter) {
-        dom.codingAfter.textContent = after;
-    }
-    if (dom.codingCopyBtn) {
-        dom.codingCopyBtn.disabled = !after;
-    }
-    if (dom.codingResult) {
-        dom.codingResult.hidden = false;
-    }
+    appendCodingMessage(after, 'ai');
 }
 
 function clearCodingTask() {
@@ -60,12 +100,11 @@ function clearCodingTask() {
     codingRequestController = null;
     if (dom.codingPrompt) dom.codingPrompt.value = '';
     if (dom.codingSource) dom.codingSource.value = '';
-    if (dom.codingResult) dom.codingResult.hidden = true;
-    if (dom.codingContext) dom.codingContext.hidden = true;
     if (dom.codingWelcome) dom.codingWelcome.hidden = false;
-    if (dom.codingBefore) dom.codingBefore.textContent = '';
-    if (dom.codingAfter) dom.codingAfter.textContent = '';
-    if (dom.codingCopyBtn) dom.codingCopyBtn.disabled = true;
+    if (dom.codingMessages) {
+        dom.codingMessages.querySelectorAll('.message-wrapper').forEach((message) => message.remove());
+    }
+    if (dom.codingContextChip) dom.codingContextChip.hidden = true;
     showCodingError('');
     setSourceStatus('');
     setCodingLoading(false);
@@ -158,6 +197,10 @@ async function readCodeFile(event) {
     try {
         const text = await file.slice(0, MAX_SOURCE_CHARS * 4).text();
         dom.codingSource.value = text.slice(0, MAX_SOURCE_CHARS);
+        if (dom.codingContextChip) {
+            dom.codingContextChip.textContent = file.name;
+            dom.codingContextChip.hidden = false;
+        }
         setSourceStatus(text.length > MAX_SOURCE_CHARS || file.size > MAX_SOURCE_CHARS * 4
             ? `${file.name} loaded (shortened to 20,000 characters).`
             : `${file.name} loaded.`);
@@ -188,7 +231,9 @@ async function generateCode() {
     const requestController = new AbortController();
     codingRequestController = requestController;
     showCodingError('');
-    showCodingResult(source, '');
+    appendCodingMessage(prompt, 'user');
+    const thinkingBubble = appendCodingMessage('Thinking…', 'ai');
+    thinkingBubble?.classList.add('coding-thinking');
     setCodingLoading(true);
     setSourceStatus('Generating a result for review…');
     if (dom.codingCopyBtn) dom.codingCopyBtn.disabled = true;

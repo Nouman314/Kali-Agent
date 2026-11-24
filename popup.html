@@ -161,7 +161,7 @@
                 </div>
 
                 <div class="coding-workspace">
-                    <div class="coding-conversation">
+                    <div class="coding-conversation chat-area" id="codingMessages">
                         <section class="coding-welcome" id="codingWelcome" aria-label="Coding examples">
                             <div class="coding-welcome-icon" aria-hidden="true">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -179,43 +179,22 @@
                                 <button class="coding-example" type="button">Write a function that reads a CSV file</button>
                             </div>
                         </section>
-
-                        <section class="coding-context" id="codingContext" aria-label="Code context" hidden>
-                            <div class="coding-context-header">
-                                <span>Code context</span>
-                                <label for="codingLanguage" class="coding-language-label">Language
-                                    <select id="codingLanguage" class="coding-language-select">
-                                        <option value="Rust" selected>Rust</option>
-                                        <option value="Python">Python</option>
-                                        <option value="JavaScript">JavaScript</option>
-                                        <option value="TypeScript">TypeScript</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </label>
-                            </div>
-                            <textarea id="codingSource" class="coding-source-input" aria-label="Code, error message, or page text" placeholder="Paste code or an error..." spellcheck="false"></textarea>
-                        </section>
-
-                        <div class="coding-result" id="codingResult" hidden>
-                            <div class="coding-result-heading">
-                                <span>Result</span>
-                                <button class="coding-subtle-btn" id="codingCopyBtn" type="button" disabled>Copy</button>
-                            </div>
-                            <pre id="codingAfter" aria-live="polite"></pre>
-                            <div class="coding-error" id="codingError" role="alert" hidden></div>
-                        </div>
-                    </div>
-
-                    <div class="coding-context-actions">
-                        <button class="coding-subtle-btn" id="codingPasteBtn" type="button">Paste code</button>
-                        <button class="coding-subtle-btn" id="codingPageBtn" type="button">Use current page</button>
-                        <span class="coding-source-status" id="codingSourceStatus" aria-live="polite"></span>
                     </div>
                 </div>
 
                 <div class="input-area coding-input-area">
                     <div class="input-box-wrapper coding-input-wrapper">
                         <textarea id="codingPrompt" class="input-box coding-prompt" placeholder="Describe the code change..." aria-label="Describe the code change"></textarea>
+                        <textarea id="codingSource" hidden></textarea>
+                        <select id="codingLanguage" hidden>
+                            <option value="Rust" selected>Rust</option>
+                            <option value="Python">Python</option>
+                            <option value="JavaScript">JavaScript</option>
+                            <option value="TypeScript">TypeScript</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="coding-context-chip" id="codingContextChip" hidden></div>
+                        <div class="coding-source-status" id="codingSourceStatus" aria-live="polite" hidden></div>
                         <div class="input-footer">
                             <div class="input-footer-left">
                                 <div class="model-selector-wrapper" style="position: relative;">

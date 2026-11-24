@@ -228,6 +228,25 @@
     max-height: 200px;
 }
 
+.coding-context-chip {
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    margin: 0 12px 8px;
+    overflow: hidden;
+    border: 0.5px solid rgba(0, 0, 0, 0.1);
+    border-radius: 999px;
+    background: #ffffff;
+    color: #4b5563;
+    padding: 5px 9px;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.coding-context-chip[hidden] {
+    display: none !important;
+}
+
 .coding-input-wrapper .model-option {
     padding: 10px 12px;
     border-radius: 8px;
