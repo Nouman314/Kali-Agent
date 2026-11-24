@@ -3,8 +3,16 @@ import { sendChatRequest } from '../services/chatApi.js';
 import { state } from '../state.js';
 import { CONFIG } from '../config.js';
 import { renderSearchSources, startThinkingAnimation, typeText } from './messages.js';
+import { getAttachmentKind, formatFileSize } from './attachments.js';
 
 const MAX_SOURCE_CHARS = 20000;
+const CODING_TEXT_EXTENSIONS = new Set([
+    'rs', 'py', 'js', 'jsx', 'mjs', 'cjs', 'ts', 'tsx', 'java', 'c', 'h', 'cpp', 'hpp',
+    'cc', 'hh', 'cs', 'go', 'rb', 'php', 'swift', 'kt', 'kts', 'scala', 'sh', 'bash',
+    'zsh', 'ps1', 'psm1', 'sql', 'html', 'htm', 'css', 'scss', 'sass', 'less', 'json',
+    'xml', 'yaml', 'yml', 'toml', 'ini', 'cfg', 'txt', 'md', 'markdown',
+]);
+const MAX_INLINE_FILE_CHARS = 20000;
 const CODING_SYSTEM_INSTRUCTION = [
     'You are a careful coding assistant. Respond to the requested task using the provided source and selected language.',
     'For code edits, return the complete updated code and a concise explanation. Do not claim to have edited or applied any file.',
@@ -127,6 +135,10 @@ function clearCodingTask() {
         dom.codingMessages.querySelectorAll('.message-wrapper').forEach((message) => message.remove());
     }
     if (dom.codingContextChip) dom.codingContextChip.hidden = true;
+    state.codingAttachments.forEach((entry) => {
+        if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+    });
+    state.codingAttachments = [];
     codingSourceName = '';
     codingHistory = [];
     setSourceStatus('');
@@ -213,34 +225,71 @@ async function readCurrentPage() {
     }
 }
 
-async function readCodeFile(event) {
-    const [file] = event.target.files || [];
+function renderCodingAttachments() {
+    if (!dom.codingContextChip) return;
+    dom.codingContextChip.replaceChildren();
+    state.codingAttachments.forEach((entry) => {
+        const chip = document.createElement('span');
+        chip.className = 'coding-attachment-item';
+        const label = document.createElement('span');
+        label.textContent = `${entry.file.name} · ${formatFileSize(entry.file.size)}`;
+        label.title = entry.file.name;
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'coding-attachment-remove';
+        remove.setAttribute('aria-label', `Remove ${entry.file.name}`);
+        remove.textContent = '×';
+        remove.addEventListener('click', () => {
+            if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+            state.codingAttachments = state.codingAttachments.filter((item) => item.id !== entry.id);
+            renderCodingAttachments();
+        });
+        chip.append(label, remove);
+        dom.codingContextChip.appendChild(chip);
+    });
+    dom.codingContextChip.hidden = !state.codingAttachments.length;
+}
+
+function readCodeFile(event) {
+    const files = Array.from(event.target.files || []);
     event.target.value = '';
-    if (!file || !dom.codingSource) return;
-    try {
-        const text = await file.slice(0, MAX_SOURCE_CHARS * 4).text();
-        dom.codingSource.value = text.slice(0, MAX_SOURCE_CHARS);
-        const extension = file.name.split('.').pop().toLowerCase();
-        const languageByExtension = { py: 'Python', js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript', cjs: 'JavaScript', ts: 'TypeScript', tsx: 'TypeScript' };
-        dom.codingLanguage.value = languageByExtension[extension] || 'Other';
-        if (dom.codingContextChip) {
-            dom.codingContextChip.textContent = file.name;
-            dom.codingContextChip.hidden = false;
-        }
-        codingSourceName = file.name;
-        setSourceStatus(text.length > MAX_SOURCE_CHARS || file.size > MAX_SOURCE_CHARS * 4
-            ? `${file.name} loaded (shortened to 20,000 characters).`
-            : `${file.name} loaded.`);
-        dom.codingSource.focus();
-    } catch (error) {
-        setSourceStatus(`Could not read ${file.name}: ${error.message || 'File could not be read.'}`);
+    if (!files.length) return;
+    if (codingRequestController) {
+        setSourceStatus('Wait for the current request to finish before adding files.');
+        return;
     }
+
+    let rejected = '';
+    for (const file of files) {
+        const extension = file.name.split('.').pop().toLowerCase();
+        let kind = getAttachmentKind(file);
+        if (kind === 'unsupported' && CODING_TEXT_EXTENSIONS.has(extension)) kind = 'code';
+        if (kind === 'unsupported') {
+            rejected = `Unsupported file type: ${file.name}`;
+            continue;
+        }
+        if (file.size > CONFIG.COMPOSER.MAX_FILE_SIZE_BYTES) {
+            rejected = `${file.name} is larger than 10 MB.`;
+            continue;
+        }
+        if (state.codingAttachments.length >= CONFIG.COMPOSER.MAX_ATTACHMENTS) {
+            rejected = `You can attach up to ${CONFIG.COMPOSER.MAX_ATTACHMENTS} files at a time.`;
+            break;
+        }
+        const duplicate = state.codingAttachments.some((entry) => entry.file.name === file.name && entry.file.size === file.size && entry.file.lastModified === file.lastModified);
+        if (duplicate) continue;
+        const languageByExtension = { py: 'Python', js: 'JavaScript', jsx: 'JavaScript', mjs: 'JavaScript', cjs: 'JavaScript', ts: 'TypeScript', tsx: 'TypeScript' };
+        if (kind === 'code' && dom.codingLanguage) dom.codingLanguage.value = languageByExtension[extension] || 'Other';
+        state.codingAttachments.push({ id: ++state.attachmentIdCounter, file, kind, previewUrl: kind === 'image' ? URL.createObjectURL(file) : '' });
+    }
+    renderCodingAttachments();
+    setSourceStatus(rejected);
 }
 
 async function generateCode() {
     const source = dom.codingSource?.value || '';
-    const sourceName = codingSourceName;
-    const prompt = dom.codingPrompt?.value.trim() || (source ? 'Please analyze the uploaded code and explain what it does.' : '');
+    const sourceName = [codingSourceName, ...state.codingAttachments.map((entry) => entry.file.name)].filter(Boolean).join(', ');
+    const prompt = dom.codingPrompt?.value.trim() || (source || state.codingAttachments.length ? 'Please analyze the attached file(s) and explain their contents.' : '');
     if (!prompt) {
         setSourceStatus('Describe what you want the coding assistant to do.');
         dom.codingPrompt?.focus();
@@ -253,7 +302,7 @@ async function generateCode() {
     const message = [
         `Language: ${language}`,
         `Task: ${prompt}`,
-        source ? `Source code, page text, or error context:\n${source}` : 'No source was provided.',
+        source ? `Source code, page text, or error context:\n${source}` : (state.codingAttachments.length ? 'Use the attached file(s) as the source.' : 'No source was provided.'),
     ].join('\n\n');
 
     const requestController = new AbortController();
@@ -268,15 +317,31 @@ async function generateCode() {
     setSourceStatus('');
 
     try {
-        const { data, ok } = await sendChatRequest({
-            message,
+        const requestOptions = {
             model: state.currentModel,
             history: codingHistory,
             signal: requestController.signal,
             systemInstruction: [state.activeAgent?.systemInstruction, CODING_SYSTEM_INSTRUCTION].filter(Boolean).join('\n\n'),
             webSearch: state.webSearchEnabled,
             onProgress: state.webSearchEnabled ? (progress) => thinkingAnimation.update(progress) : undefined,
-        });
+        };
+        const attachments = state.codingAttachments.slice();
+        let requestMessage = message;
+        let result = await sendChatRequest({ ...requestOptions, message: requestMessage, attachments });
+
+        // Older backend processes may still have the pre-code-file allowlist loaded.
+        // Retry code-only uploads as text so users do not have to restart the backend.
+        if (!result.ok && attachments.length && attachments.every((entry) => entry.kind === 'code') &&
+            /^unsupported file type:/i.test(result.data?.error || '')) {
+            const inlineFiles = await Promise.all(attachments.map(async (entry) => {
+                const text = await entry.file.slice(0, MAX_INLINE_FILE_CHARS * 4).text();
+                return `[Code file: ${entry.file.name}]\n${text.slice(0, MAX_INLINE_FILE_CHARS)}`;
+            }));
+            requestMessage = `${message}\n\n${inlineFiles.join('\n\n')}`;
+            result = await sendChatRequest({ ...requestOptions, message: requestMessage, attachments: [] });
+        }
+
+        const { data, ok } = result;
 
         thinkingAnimation.stop();
         thinkingBubble.innerHTML = '';
@@ -293,9 +358,13 @@ async function generateCode() {
         if (dom.codingSource) dom.codingSource.value = '';
         if (dom.codingContextChip) dom.codingContextChip.hidden = true;
         codingSourceName = '';
+        state.codingAttachments.forEach((entry) => {
+            if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+        });
+        state.codingAttachments = [];
 
         codingHistory.push(
-            { role: 'user', text: message },
+            { role: 'user', text: typeof data.history_message === 'string' ? data.history_message : requestMessage },
             { role: 'model', text: data.reply },
         );
         await typeText(thinkingBubble, data.reply, CONFIG.TYPEWRITER.SPEED_MS, requestController.signal);
@@ -307,11 +376,11 @@ async function generateCode() {
         if (codingRequestController !== requestController) return;
         if (error.name === 'AbortError') {
             thinkingBubble.innerHTML = '';
-            if (codingSourceName && dom.codingContextChip) dom.codingContextChip.hidden = false;
+            renderCodingAttachments();
             setSourceStatus('Request cancelled.');
             return;
         }
-        if (codingSourceName && dom.codingContextChip) dom.codingContextChip.hidden = false;
+        renderCodingAttachments();
         showCodingError(error.message || 'The coding request failed.', thinkingBubble);
         setSourceStatus('The request did not complete.');
     } finally {

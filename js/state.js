@@ -11,6 +11,7 @@ export const state = {
     startHeight: 0,
     attachedFiles: [],
     attachmentIdCounter: 0,
+    codingAttachments: [],
     activeAgent: null, // Tracks selected agent { id, name, systemInstruction, icon }
     messages: [], // Current chat transcript, persisted locally and sent as model context
     workspace: {

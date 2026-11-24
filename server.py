@@ -120,6 +120,18 @@ SUPPORTED_ATTACHMENT_EXTENSIONS = {
     ".gif",
     ".webp",
     ".bmp",
+    ".rs", ".py", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".java",
+    ".c", ".h", ".cpp", ".hpp", ".cc", ".hh", ".cs", ".go", ".rb", ".php",
+    ".swift", ".kt", ".kts", ".scala", ".sh", ".bash", ".zsh", ".ps1", ".psm1",
+    ".sql", ".html", ".htm", ".css", ".scss", ".sass", ".less", ".json", ".xml",
+    ".yaml", ".yml", ".toml", ".ini", ".cfg",
+}
+CODE_ATTACHMENT_EXTENSIONS = {
+    ".rs", ".py", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".java",
+    ".c", ".h", ".cpp", ".hpp", ".cc", ".hh", ".cs", ".go", ".rb", ".php",
+    ".swift", ".kt", ".kts", ".scala", ".sh", ".bash", ".zsh", ".ps1", ".psm1",
+    ".sql", ".html", ".htm", ".css", ".scss", ".sass", ".less", ".json", ".xml",
+    ".yaml", ".yml", ".toml", ".ini", ".cfg",
 }
 
 # Separate history for the Workspace (document-chat) tab so it never
@@ -204,7 +216,7 @@ def _is_supported_attachment(filename, mime_type):
         return mime_type == "application/vnd.openxmlformats-officedocument.presentationml.presentation" or extension == ".pptx"
     if extension == ".xlsx":
         return mime_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" or extension == ".xlsx"
-    if extension in {".txt", ".md", ".markdown"}:
+    if extension in ({".txt", ".md", ".markdown"} | CODE_ATTACHMENT_EXTENSIONS):
         return True
     return mime_type.startswith("image/") or extension in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}
 
@@ -255,10 +267,10 @@ def _build_attachment_context(uploaded_files, user_message):
                 attachment_text = extracted_text or "[No text extracted from XLSX]"
                 prompt_parts.append(genai.types.Part(text=f"\n\n[XLSX: {filename}]\n{attachment_text}"))
                 summary_parts.append(f"[XLSX: {filename}]\n{attachment_text}")
-            elif extension in {".txt", ".md", ".markdown"}:
+            elif extension in ({".txt", ".md", ".markdown"} | CODE_ATTACHMENT_EXTENSIONS):
                 extracted_text = _truncate_text(_extract_plain_text(data))
                 attachment_text = extracted_text or "[Empty file]"
-                label = "MD" if extension in {".md", ".markdown"} else "TXT"
+                label = "CODE" if extension in CODE_ATTACHMENT_EXTENSIONS else ("MD" if extension in {".md", ".markdown"} else "TXT")
                 prompt_parts.append(genai.types.Part(text=f"\n\n[{label}: {filename}]\n{attachment_text}"))
                 summary_parts.append(f"[{label}: {filename}]\n{attachment_text}")
             else:
