@@ -1,6 +1,8 @@
 import { dom } from '../dom.js';
 import { sendChatRequest } from '../services/chatApi.js';
 import { state } from '../state.js';
+import { CONFIG } from '../config.js';
+import { renderSearchSources, startThinkingAnimation, typeText } from './messages.js';
 
 const MAX_SOURCE_CHARS = 20000;
 const CODING_SYSTEM_INSTRUCTION = [
@@ -77,22 +79,6 @@ function setCodingLoading(isLoading) {
 
     dom.codingSendBtn.disabled = isLoading;
     dom.codingSendBtn.setAttribute('aria-label', isLoading ? 'Generating code' : 'Generate code');
-}
-
-function showCodingResult(before, after = '') {
-    if (dom.codingWelcome) dom.codingWelcome.hidden = true;
-    if (!after) return;
-    const thinking = dom.codingMessages?.querySelector('.coding-thinking');
-    if (thinking) {
-        thinking.classList.remove('coding-thinking');
-        thinking.innerHTML = globalThis.marked?.parse ? globalThis.marked.parse(after) : after;
-        thinking.querySelectorAll('pre code').forEach((block) => {
-            globalThis.hljs?.highlightElement(block);
-        });
-        dom.codingMessages.scrollTop = dom.codingMessages.scrollHeight;
-        return;
-    }
-    appendCodingMessage(after, 'ai');
 }
 
 function clearCodingTask() {
@@ -232,11 +218,11 @@ async function generateCode() {
     codingRequestController = requestController;
     showCodingError('');
     appendCodingMessage(prompt, 'user');
-    const thinkingBubble = appendCodingMessage('Thinking…', 'ai');
-    thinkingBubble?.classList.add('coding-thinking');
+    const thinkingBubble = appendCodingMessage('', 'ai');
+    if (state.webSearchEnabled) thinkingBubble?.classList.add('chat-bubble--search');
+    const thinkingAnimation = startThinkingAnimation(thinkingBubble, state.webSearchEnabled);
     setCodingLoading(true);
-    setSourceStatus('Generating a result for review…');
-    if (dom.codingCopyBtn) dom.codingCopyBtn.disabled = true;
+    setSourceStatus('');
 
     try {
         const { data, ok } = await sendChatRequest({
@@ -245,7 +231,11 @@ async function generateCode() {
             signal: requestController.signal,
             systemInstruction: CODING_SYSTEM_INSTRUCTION,
             webSearch: state.webSearchEnabled,
+            onProgress: state.webSearchEnabled ? (progress) => thinkingAnimation.update(progress) : undefined,
         });
+
+        thinkingAnimation.stop();
+        thinkingBubble.innerHTML = '';
 
         if (!ok) {
             throw new Error(data?.error || 'The coding request failed.');
@@ -254,9 +244,13 @@ async function generateCode() {
             throw new Error('The model returned an empty response.');
         }
 
-        showCodingResult(source, data.reply);
-        setSourceStatus('Result ready for review. Nothing has been applied.');
+        await typeText(thinkingBubble, data.reply, CONFIG.TYPEWRITER.SPEED_MS, requestController.signal);
+        renderSearchSources(thinkingBubble, data.sources, data.images, data.image_search_error);
+        if (dom.codingMessages) dom.codingMessages.scrollTop = dom.codingMessages.scrollHeight;
+        setSourceStatus('');
     } catch (error) {
+        thinkingAnimation.stop();
+        thinkingBubble.innerHTML = '';
         if (codingRequestController !== requestController) return;
         if (error.name === 'AbortError') {
             setSourceStatus('Request cancelled.');
@@ -269,18 +263,6 @@ async function generateCode() {
             codingRequestController = null;
             setCodingLoading(false);
         }
-    }
-}
-
-async function copyResult() {
-    const result = dom.codingAfter?.textContent || '';
-    if (!result) return;
-
-    try {
-        await navigator.clipboard.writeText(result);
-        setSourceStatus('Result copied.');
-    } catch (error) {
-        setSourceStatus(`Could not copy the result: ${error.message || 'Clipboard access was denied.'}`);
     }
 }
 
@@ -303,7 +285,6 @@ export function bindCodingInteractions() {
     dom.codingSendBtn?.addEventListener('click', generateCode);
     dom.codingNewTaskBtn?.addEventListener('click', clearCodingTask);
     dom.codingOpenWindowBtn?.addEventListener('click', openCodingWindow);
-    dom.codingCopyBtn?.addEventListener('click', copyResult);
 
     dom.codingPrompt?.addEventListener('input', () => {
         dom.codingPrompt.style.height = 'auto';

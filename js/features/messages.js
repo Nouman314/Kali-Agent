@@ -554,7 +554,7 @@ const GLOBE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
     <path d="M12 3a14.5 14.5 0 0 1 0 18a14.5 14.5 0 0 1 0-18z"></path>
 </svg>`;
 
-function startThinkingAnimation(bubble, useWebSearch) {
+export function startThinkingAnimation(bubble, useWebSearch) {
     bubble.innerHTML = '';
 
     if (useWebSearch) {
@@ -749,7 +749,7 @@ function appendSearchImages(section, sources, images, imageSearchError) {
     section.appendChild(imageSection);
 }
 
-function renderSearchSources(bubble, sources, images, imageSearchError) {
+export function renderSearchSources(bubble, sources, images, imageSearchError) {
     if ((!Array.isArray(sources) || !sources.length) &&
         (!Array.isArray(images) || !images.length) &&
         !imageSearchError) return;
