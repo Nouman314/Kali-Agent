@@ -8,8 +8,8 @@ Setup:
     3. python server.py  →  http://localhost:5000
 
 POST /chat            { "message": "...", "model": "...", "web_search": false }
-                      Multipart uploads support up to 5 files by default; Code tab
-                      requests set coding_mode=true to allow up to 40 files.
+                      Multipart uploads support up to 5 files.
+POST /coding-chat     Code-tab endpoint supporting up to 40 uploaded files.
                       →  { "reply": "...", "sources": [...], "images": [...] }
                       Accepts prior conversation turns in the optional "history" array.
                       With Accept: application/x-ndjson, streams search progress and source URLs.
@@ -528,16 +528,18 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # ── Routes ───────────────────────────────────────────────────────
 
 @app.route("/chat", methods=["POST"])
+@app.route("/coding-chat", methods=["POST"])
 def chat():
     is_multipart = request.content_type and request.content_type.startswith("multipart/form-data")
-    max_attachments = MAX_ATTACHMENTS
+    is_coding_request = request.path == "/coding-chat"
+    max_attachments = MAX_CODING_ATTACHMENTS if is_coding_request else MAX_ATTACHMENTS
 
     if is_multipart:
         user_message = request.form.get("message", "").strip()
         selected_model = request.form.get("model") or DEFAULT_MODEL
         system_instruction = request.form.get("system_instruction") or SYSTEM_INSTRUCTION
         upload_files = request.files.getlist("attachments")
-        if request.form.get("coding_mode") == "true":
+        if is_coding_request or request.form.get("coding_mode") == "true":
             max_attachments = MAX_CODING_ATTACHMENTS
         use_web_search = _as_bool(request.form.get("web_search"))
         try:

@@ -20,6 +20,7 @@ export async function sendChatRequest({
     onProgress,
 }) {
     const hasAttachments = attachments.length > 0;
+    const endpoint = codingMode ? CONFIG.ENDPOINTS.CODING_CHAT : CONFIG.ENDPOINTS.CHAT;
     const headers = webSearch
         ? { Accept: 'application/x-ndjson' }
         : undefined;
@@ -34,21 +35,18 @@ export async function sendChatRequest({
         if (systemInstruction) {
             formData.append('system_instruction', systemInstruction);
         }
-        if (codingMode) {
-            formData.append('coding_mode', 'true');
-        }
         attachments.forEach((entry) => {
             formData.append('attachments', entry.file, entry.file.name);
         });
 
-        response = await fetch(CONFIG.ENDPOINTS.CHAT, {
+        response = await fetch(endpoint, {
             method: 'POST',
             headers,
             body: formData,
             signal,
         });
     } else {
-        response = await fetch(CONFIG.ENDPOINTS.CHAT, {
+        response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -495,10 +495,14 @@ async function generateCode(request = {}) {
         let requestMessage = message;
         let result = await sendChatRequest({ ...requestOptions, message: requestMessage, attachments });
 
-        // Older backend processes may still have the pre-code-file allowlist loaded.
-        // Retry code-only uploads as text so users do not have to restart the backend.
-        if (!result.ok && attachments.length && attachments.every((entry) => entry.kind === 'code') &&
-            /^unsupported file type:/i.test(result.data?.error || '')) {
+        // Older backend processes may still enforce the five-file chat limit or
+        // lack the code-file allowlist. Inline code files to keep Code usable.
+        const codeOnlyAttachments = attachments.length > 0 &&
+            attachments.every((entry) => entry.kind === 'code');
+        const backendRejectedCodeFiles = /^unsupported file type:/i.test(result.data?.error || '');
+        const backendRejectedFileCount = attachments.length > 5 &&
+            /at most 5 files/i.test(result.data?.error || '');
+        if (!result.ok && codeOnlyAttachments && (backendRejectedCodeFiles || backendRejectedFileCount)) {
             const inlineFiles = await Promise.all(attachments.map(async (entry) => {
                 const text = await entry.file.slice(0, MAX_INLINE_FILE_CHARS * 4).text();
                 return `[Code file: ${entry.file.name}]\n${text.slice(0, MAX_INLINE_FILE_CHARS)}`;
@@ -514,9 +518,6 @@ async function generateCode(request = {}) {
 
         if (!ok) {
             const errorMessage = data?.error || 'The coding request failed.';
-            if (attachments.length > 5 && /at most 5 files/i.test(errorMessage)) {
-                throw new Error('The Code upload limit is still set to 5 by the running backend. Restart server.py to enable the 40-file Code limit.');
-            }
             throw new Error(errorMessage);
         }
         if (typeof data.reply !== 'string' || !data.reply.trim()) {
