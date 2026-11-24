@@ -230,6 +230,25 @@
 
 .coding-context-chip {
     max-width: 100%;
+    max-height: 144px;
+    overflow-y: auto;
+    align-content: flex-start;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.coding-context-chip::-webkit-scrollbar {
+    width: 6px;
+}
+
+.coding-context-chip::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.coding-context-chip::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.2);
 }
 
 .coding-context-chip[hidden] {

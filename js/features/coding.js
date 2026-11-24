@@ -165,12 +165,6 @@ function resizeCodingPrompt() {
     dom.codingPrompt.style.height = `${dom.codingPrompt.scrollHeight}px`;
 }
 
-function restoreCodingPrompt(prompt) {
-    if (!prompt || !dom.codingPrompt || dom.codingPrompt.value) return;
-    dom.codingPrompt.value = prompt;
-    resizeCodingPrompt();
-}
-
 function restartCodingRequest(request, prompt = request.prompt) {
     if (codingRequestController) return;
 
@@ -377,6 +371,14 @@ function renderCodingAttachments() {
     dom.codingContextChip.hidden = !state.codingAttachments.length;
 }
 
+function clearCodingAttachments() {
+    state.codingAttachments.forEach((entry) => {
+        if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+    });
+    state.codingAttachments = [];
+    renderCodingAttachments();
+}
+
 function removeCodingAttachment(event) {
     const removeButton = event.target.closest('.attachment-remove');
     if (!removeButton || !dom.codingContextChip?.contains(removeButton)) return;
@@ -468,6 +470,7 @@ async function generateCode(request = {}) {
         userBubble.dataset.rawText = prompt;
         userBubble._codingRequest = codingRequest;
     }
+    if (!hasPromptOverride) clearCodingAttachments();
     if (!hasPromptOverride && dom.codingPrompt) {
         dom.codingPrompt.value = '';
         dom.codingPrompt.style.height = '';
@@ -510,21 +513,18 @@ async function generateCode(request = {}) {
         thinkingBubble.innerHTML = '';
 
         if (!ok) {
-            throw new Error(data?.error || 'The coding request failed.');
+            const errorMessage = data?.error || 'The coding request failed.';
+            if (attachments.length > 5 && /at most 5 files/i.test(errorMessage)) {
+                throw new Error('The Code upload limit is still set to 5 by the running backend. Restart server.py to enable the 40-file Code limit.');
+            }
+            throw new Error(errorMessage);
         }
         if (typeof data.reply !== 'string' || !data.reply.trim()) {
             throw new Error('The model returned an empty response.');
         }
 
         if (!hasSourceOverride && dom.codingSource) dom.codingSource.value = '';
-        if (!hasPromptOverride && dom.codingContextChip) dom.codingContextChip.hidden = true;
-        if (!hasPromptOverride) {
-            codingSourceName = '';
-            state.codingAttachments.forEach((entry) => {
-                if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
-            });
-            state.codingAttachments = [];
-        }
+        if (!hasPromptOverride) codingSourceName = '';
 
         codingHistory = history.slice();
         codingHistory.push(
@@ -542,13 +542,9 @@ async function generateCode(request = {}) {
         if (codingRequestController !== requestController) return;
         if (error.name === 'AbortError') {
             thinkingBubble.innerHTML = '';
-            if (!hasPromptOverride) restoreCodingPrompt(promptDraft);
-            renderCodingAttachments();
             setSourceStatus('Request cancelled.');
             return;
         }
-        if (!hasPromptOverride) restoreCodingPrompt(promptDraft);
-        renderCodingAttachments();
         showCodingError(error.message || 'The coding request failed.', thinkingBubble);
         setSourceStatus('The request did not complete.');
     } finally {
