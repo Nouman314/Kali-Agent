@@ -3,6 +3,7 @@ import { dom } from '../dom.js';
 import { sendChatRequest } from '../services/chatApi.js';
 import { clearAttachments, createAttachmentChip, buildUserBubbleText } from './attachments.js';
 import { state } from '../state.js';
+import { enhanceCodeBlocks } from '../utils/codeBlocks.js';
 
 let chatBound = false;
 const CHAT_STORAGE_KEY = 'kali_chat_history';
@@ -35,13 +36,6 @@ function scrollChatToBottom() {
 function renderMarkdown(text) {
     if (typeof marked === 'undefined') return text;
     return marked.parse(text);
-}
-
-function highlightCodeBlocks(root) {
-    if (typeof hljs === 'undefined') return;
-    root.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightElement(block);
-    });
 }
 
 export function renderEmptyState() {
@@ -969,7 +963,7 @@ export async function typeText(element, text, speed = CONFIG.TYPEWRITER.SPEED_MS
         function type() {
             if (signal && signal.aborted) {
                 element.innerHTML = renderMarkdown(text.slice(0, i));
-                highlightCodeBlocks(element);
+                enhanceCodeBlocks(element);
                 scrollChatToBottom();
                 resolve();
                 return;
@@ -986,7 +980,7 @@ export async function typeText(element, text, speed = CONFIG.TYPEWRITER.SPEED_MS
             }
 
             element.innerHTML = renderMarkdown(text);
-            highlightCodeBlocks(element);
+            enhanceCodeBlocks(element);
             scrollChatToBottom();
             resolve();
         }

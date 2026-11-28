@@ -144,11 +144,81 @@
     text-decoration-color: #4b3fd8;
 }
 
+.chat-bubble--ai .chat-code-block {
+    max-width: 100%;
+    margin: 10px 0 14px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    background: #282c34;
+}
+
+.code-block-toolbar {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 8px 5px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: #22252b;
+}
+
+.code-block-language {
+    overflow: hidden;
+    color: #d1d5db;
+    font: 500 11px/1.3 var(--font-sans);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.code-block-copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex-shrink: 0;
+    padding: 4px 7px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #d1d5db;
+    font: 500 11px/1.3 var(--font-sans);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.code-block-copy:hover,
+.code-block-copy:focus-visible {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.code-block-copy:focus-visible {
+    outline: 2px solid #a5b4fc;
+    outline-offset: 2px;
+}
+
+.code-block-copy svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.code-block-copy.is-copied {
+    color: #86efac;
+}
+
+.code-block-copy.is-copy-failed {
+    color: #fca5a5;
+}
+
 .chat-bubble--ai pre {
     background: #282c34;
-    border-radius: 8px;
+    border-radius: 0;
     padding: 12px;
-    margin: 8px 0;
+    margin: 0;
     overflow-x: auto;
 }
 

@@ -11,6 +11,7 @@ import {
     typeText,
 } from './messages.js';
 import { createAttachmentChip, getAttachmentKind } from './attachments.js';
+import { enhanceCodeBlocks } from '../utils/codeBlocks.js';
 
 const MAX_SOURCE_CHARS = 20000;
 const CODING_TEXT_EXTENSIONS = new Set([
@@ -92,9 +93,7 @@ function appendCodingMessage(text, role, attachments = []) {
 
     if (role === 'ai') {
         bubble.innerHTML = globalThis.marked?.parse ? globalThis.marked.parse(text) : text;
-        bubble.querySelectorAll('pre code').forEach((block) => {
-            globalThis.hljs?.highlightElement(block);
-        });
+        enhanceCodeBlocks(bubble);
     } else {
         bubble.textContent = text;
     }

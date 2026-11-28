@@ -3,6 +3,7 @@ import { dom } from '../dom.js';
 import { state } from '../state.js';
 import { formatFileSize } from './attachments.js';
 import { formatCleanText } from '../utils/textFormat.js';
+import { enhanceCodeBlocks } from '../utils/codeBlocks.js';
 import { sendWorkspaceChatRequest, resetWorkspaceSession } from '../services/chatApi.js';
 
 let workspaceBound = false;
@@ -132,13 +133,6 @@ function renderMarkdown(text) {
     return marked.parse(text);
 }
 
-function highlightCodeBlocks(root) {
-    if (typeof hljs === 'undefined') return;
-    root.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightElement(block);
-    });
-}
-
 async function typeWorkspaceText(element, text, speed = CONFIG.TYPEWRITER.SPEED_MS) {
     element.innerHTML = '';
     let i = 0;
@@ -156,7 +150,7 @@ async function typeWorkspaceText(element, text, speed = CONFIG.TYPEWRITER.SPEED_
             }
 
             element.innerHTML = renderMarkdown(text);
-            highlightCodeBlocks(element);
+            enhanceCodeBlocks(element);
             if (dom.workspaceChatArea) {
                 dom.workspaceChatArea.scrollTop = dom.workspaceChatArea.scrollHeight;
             }
@@ -470,7 +464,7 @@ function renderWorkspaceMessageBubble(bubble, role, text) {
 
     if (role === 'ai') {
         bubble.innerHTML = text ? renderMarkdown(text) : '';
-        highlightCodeBlocks(bubble);
+        enhanceCodeBlocks(bubble);
         return;
     }
 
@@ -604,7 +598,7 @@ function renderChatPane() {
         dom.workspaceChatArea.appendChild(wrapper);
     });
 
-    highlightCodeBlocks(dom.workspaceChatArea);
+    enhanceCodeBlocks(dom.workspaceChatArea);
     dom.workspaceChatArea.scrollTop = dom.workspaceChatArea.scrollHeight;
 }
 
