@@ -6,6 +6,7 @@ import { clearConversation, resetComposerHeight, sendMessage } from './messages.
 import { state } from '../state.js';
 
 let composerBound = false;
+let resizeTarget = null;
 
 function setActiveModel(option) {
     state.currentModel = option.getAttribute('data-model');
@@ -62,25 +63,25 @@ export function setWebSearchMode(enabled) {
     }
 }
 
-function updateResizeCursor(event) {
-    if (state.isResizing || !dom.inputWrapper || !dom.inputBox) return;
+function bindComposerResize(wrapper, textarea) {
+    if (!wrapper || !textarea) return;
 
-    const isTopEdge = event.clientY - dom.inputWrapper.getBoundingClientRect().top < 8;
-    const cursor = isTopEdge ? 'ns-resize' : 'text';
-    dom.inputWrapper.style.cursor = cursor;
-    dom.inputBox.style.cursor = cursor;
-}
+    wrapper.addEventListener('mousemove', (event) => {
+        if (state.isResizing) return;
+        const isTopEdge = event.clientY - wrapper.getBoundingClientRect().top < 8;
+        const cursor = isTopEdge ? 'ns-resize' : 'text';
+        wrapper.style.cursor = cursor;
+        textarea.style.cursor = cursor;
+    });
 
-function tryStartResize(event) {
-    if (!dom.inputWrapper || !dom.inputBox) return;
-
-    const isTopEdge = event.clientY - dom.inputWrapper.getBoundingClientRect().top < 8;
-    if (!isTopEdge) return;
-
-    state.isResizing = true;
-    state.startY = event.clientY;
-    state.startHeight = dom.inputBox.getBoundingClientRect().height;
-    event.preventDefault();
+    wrapper.addEventListener('mousedown', (event) => {
+        if (event.clientY - wrapper.getBoundingClientRect().top >= 8) return;
+        resizeTarget = textarea;
+        state.isResizing = true;
+        state.startY = event.clientY;
+        state.startHeight = textarea.getBoundingClientRect().height;
+        event.preventDefault();
+    });
 }
 
 function resetConversation() {
@@ -229,21 +230,22 @@ export function bindComposerEvents() {
         });
     }
 
-    if (dom.inputWrapper && dom.inputBox) {
-        dom.inputWrapper.addEventListener('mousemove', updateResizeCursor);
-        dom.inputBox.addEventListener('mousemove', updateResizeCursor);
-        dom.inputWrapper.addEventListener('mousedown', tryStartResize);
-        dom.inputBox.addEventListener('mousedown', tryStartResize);
-    }
+    bindComposerResize(dom.inputWrapper, dom.inputBox);
+    bindComposerResize(dom.workspaceChatInput?.closest('.input-box-wrapper'), dom.workspaceChatInput);
+    bindComposerResize(dom.codingInputWrapper, dom.codingPrompt);
 
     document.addEventListener('mousemove', (event) => {
-        if (!state.isResizing || !dom.inputBox) return;
-        const newHeight = Math.min(CONFIG.COMPOSER.MAX_INPUT_HEIGHT, Math.max(CONFIG.COMPOSER.MIN_INPUT_HEIGHT, state.startHeight + (state.startY - event.clientY)));
-        dom.inputBox.style.height = `${newHeight}px`;
+        if (!state.isResizing || !resizeTarget) return;
+        const newHeight = Math.min(
+            CONFIG.COMPOSER.MAX_INPUT_HEIGHT,
+            Math.max(CONFIG.COMPOSER.MIN_INPUT_HEIGHT, state.startHeight + (state.startY - event.clientY))
+        );
+        resizeTarget.style.height = `${newHeight}px`;
     });
 
     document.addEventListener('mouseup', () => {
         state.isResizing = false;
+        resizeTarget = null;
     });
 
     const defaultOption = dom.modelOptions.find((option) => option.getAttribute('data-model') === state.currentModel);

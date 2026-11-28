@@ -880,46 +880,6 @@ export function bindWorkspaceInteractions() {
 
     dom.workspaceChatArea?.addEventListener('click', handleBubbleActionClick);
 
-    const workspaceInputWrapper = dom.workspaceChatInput?.closest('.input-box-wrapper');
-    if (workspaceInputWrapper && dom.workspaceChatInput) {
-        const updateResizeCursor = (event) => {
-            if (state.isResizing) return;
-
-            const isTopEdge = event.clientY - workspaceInputWrapper.getBoundingClientRect().top < 8;
-            const cursor = isTopEdge ? 'ns-resize' : 'text';
-            workspaceInputWrapper.style.cursor = cursor;
-            dom.workspaceChatInput.style.cursor = cursor;
-        };
-
-        const tryStartResize = (event) => {
-            const isTopEdge = event.clientY - workspaceInputWrapper.getBoundingClientRect().top < 8;
-            if (!isTopEdge) return;
-
-            state.isResizing = true;
-            state.startY = event.clientY;
-            state.startHeight = dom.workspaceChatInput.getBoundingClientRect().height;
-            event.preventDefault();
-        };
-
-        workspaceInputWrapper.addEventListener('mousemove', updateResizeCursor);
-        dom.workspaceChatInput.addEventListener('mousemove', updateResizeCursor);
-        workspaceInputWrapper.addEventListener('mousedown', tryStartResize);
-        dom.workspaceChatInput.addEventListener('mousedown', tryStartResize);
-    }
-
-    document.addEventListener('mousemove', (event) => {
-        if (!state.isResizing || !dom.workspaceChatInput) return;
-        const newHeight = Math.min(
-            CONFIG.COMPOSER.MAX_INPUT_HEIGHT,
-            Math.max(CONFIG.COMPOSER.MIN_INPUT_HEIGHT, state.startHeight + (state.startY - event.clientY))
-        );
-        dom.workspaceChatInput.style.height = `${newHeight}px`;
-    });
-
-    document.addEventListener('mouseup', () => {
-        state.isResizing = false;
-    });
-
     if (dom.workspaceSplit && 'ResizeObserver' in window) {
         const observer = new ResizeObserver((entries) => {
             entries.forEach((entry) => {
